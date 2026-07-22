@@ -52,9 +52,33 @@
     <main>
       <section id="how-it-works" class="section">
         <h2 class="section__title">How it Works</h2>
-        <p class="section__body">
-          Content coming soon.
+        <p class="section__lede">
+          The goal is not to build a smarter model, but to build a smarter
+          inference engine that makes existing models faster, cheaper, more
+          consistent, and able to handle much longer reasoning sessions by
+          remembering and reusing work instead of starting from scratch every
+          time.
         </p>
+
+        <ol class="pipeline" aria-label="Inference pipeline">
+          <li class="pipeline__step">User</li>
+          <li class="pipeline__arrow" aria-hidden="true">↓</li>
+          <li class="pipeline__step">Intent Parser</li>
+          <li class="pipeline__arrow" aria-hidden="true">↓</li>
+          <li class="pipeline__step">Planner</li>
+          <li class="pipeline__arrow" aria-hidden="true">↓</li>
+          <li class="pipeline__step">Memory / Cache / Context Vault</li>
+          <li class="pipeline__arrow" aria-hidden="true">↓</li>
+          <li class="pipeline__step">Tools</li>
+          <li class="pipeline__arrow" aria-hidden="true">↓</li>
+          <li class="pipeline__step">Symbolic Code</li>
+          <li class="pipeline__arrow" aria-hidden="true">↓</li>
+          <li class="pipeline__step">Local or Remote LLM</li>
+          <li class="pipeline__arrow" aria-hidden="true">↓</li>
+          <li class="pipeline__step">Verification</li>
+          <li class="pipeline__arrow" aria-hidden="true">↓</li>
+          <li class="pipeline__step pipeline__step--end">Answer</li>
+        </ol>
       </section>
     </main>
 
