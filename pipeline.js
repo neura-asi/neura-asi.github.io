@@ -315,17 +315,31 @@
     connector.classList.remove("is-flowing");
   }
 
-  async function typeNamed(map, names) {
+  async function revealNamed(map, names) {
     for (let i = 0; i < names.length; i++) {
       if (!simulating) return;
       const name = names[i];
       const text = map[name] || "—";
       const el = setFieldText(name, text);
-      if (el) {
-        const speed = text.length > 70 ? 5 : text.length > 35 ? 7 : 9;
+      if (!el) continue;
+
+      const typeIt =
+        /\.(prompt|response)$/.test(name) ||
+        (text.length > 58 && !text.includes(" · ") && text.indexOf("~/.neura") !== 0);
+
+      if (typeIt) {
+        const speed = text.length > 90 ? 4 : text.length > 50 ? 6 : 8;
         await typewriter(el, text, speed);
+        await wait(40);
+      } else {
+        // Metadata / paths / chip-lists appear instantly with a flash
+        el.classList.remove("typing");
+        el.classList.add("reveal-flash");
+        el.textContent = text;
+        await wait(70);
+        el.classList.remove("reveal-flash");
+        await wait(35);
       }
-      await wait(28);
     }
   }
 
@@ -350,7 +364,7 @@
         return false;
       });
       setBar(stageName + " · " + order[i], "is-run");
-      await typeNamed(map, keys);
+      await revealNamed(map, keys);
       mem.classList.remove("is-active");
       mem.classList.add("is-open", "is-done");
       await wait(40);
@@ -365,32 +379,32 @@
 
     if (name === "user") {
       setBar("User · surface captures the turn", "is-run");
-      await typeNamed(map, ["user.prompt", "user.surface", "user.captures", "user.session"]);
+      await revealNamed(map, ["user.prompt", "user.surface", "user.captures", "user.session"]);
     } else if (name === "context") {
       setBar("Context Pool · curating candidates", "is-run");
-      await typeNamed(map, ["context.gather", "context.tools", "context.state", "context.note"]);
+      await revealNamed(map, ["context.gather", "context.tools", "context.state", "context.note"]);
     } else if (name === "memory") {
       setBar("Memory Lookup · graph + embeddings", "is-run");
-      await typeNamed(map, ["memory.store"]);
+      await revealNamed(map, ["memory.store"]);
       await runNested(stage, "memory", map);
     } else if (name === "sidecar") {
       setBar("Sidecar · optional helper pass", "is-run");
-      await typeNamed(map, ["sidecar.note", "sidecar.jobs", "sidecar.status"]);
+      await revealNamed(map, ["sidecar.note", "sidecar.jobs", "sidecar.status"]);
     } else if (name === "diet") {
       setBar("Context Diet · vault + token budget", "is-run");
       await runNested(stage, "diet", map);
     } else if (name === "assemble") {
       setBar("Assemble Prompt · final message list", "is-run");
-      await typeNamed(map, ["assemble.layers", "assemble.memory", "assemble.request"]);
+      await revealNamed(map, ["assemble.layers", "assemble.memory", "assemble.request"]);
     } else if (name === "provider") {
       setBar("Provider Routing · main model path", "is-run");
-      await typeNamed(map, ["provider.route", "provider.handles", "provider.vs"]);
+      await revealNamed(map, ["provider.route", "provider.handles", "provider.vs"]);
     } else if (name === "runtime") {
       setBar("Runtime Loop · stream / tools / recover", "is-run");
       await runNested(stage, "runtime", map);
     } else if (name === "answer") {
       setBar("Answer · finalize to user", "is-run");
-      await typeNamed(map, ["answer.response", "answer.save"]);
+      await revealNamed(map, ["answer.response", "answer.save"]);
     } else if (name === "after") {
       setBar("After Turn · persist / extract / garden", "is-run");
       await runNested(stage, "after", map);

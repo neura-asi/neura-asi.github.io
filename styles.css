@@ -311,6 +311,20 @@ body {
   color: var(--ok);
 }
 
+.tree-stage.is-active {
+  animation: stage-glow 1.8s ease-in-out infinite;
+}
+
+@keyframes stage-glow {
+  0%,
+  100% {
+    filter: none;
+  }
+  50% {
+    filter: drop-shadow(0 0 12px color-mix(in srgb, var(--how-bg) 25%, transparent));
+  }
+}
+
 .tree-node--end {
   color: var(--how-bg);
 }
@@ -485,19 +499,20 @@ body {
   max-height: 0;
   opacity: 0;
   overflow: hidden;
-  transform: translateX(-12px);
+  transform: translateX(-16px) scale(0.98);
+  transform-origin: left center;
   pointer-events: none;
   transition:
-    max-height 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.35s ease,
-    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    max-height 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.4s ease,
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .tree-stage.is-open > .tree-row > .tree-branch,
 .tree-stage.is-active > .tree-row > .tree-branch {
-  max-height: 1200px;
+  max-height: 1400px;
   opacity: 1;
-  transform: translateX(0);
+  transform: translateX(0) scale(1);
   pointer-events: auto;
   overflow: visible;
 }
@@ -520,7 +535,8 @@ body {
 }
 
 .tree-stage.is-open > .tree-row > .tree-branch .tree-elbow path,
-.tree-stage.is-active > .tree-row > .tree-branch .tree-elbow path {
+.tree-stage.is-active > .tree-row > .tree-branch .tree-elbow path,
+.tree-stage.is-done > .tree-row > .tree-branch .tree-elbow path {
   animation: draw-elbow 0.55s ease forwards;
   stroke: var(--how-bg);
 }
@@ -781,754 +797,472 @@ body {
   animation-delay: 0.2s;
 }
 
-/* —— Mini viz (shared) —— */
+/* —— Reveal flash for instant fields —— */
+.leaf-v.reveal-flash {
+  animation: reveal-flash 0.28s ease;
+}
+
+@keyframes reveal-flash {
+  0% {
+    opacity: 0;
+    transform: translateX(-6px);
+    color: var(--how-bg);
+  }
+  55% {
+    opacity: 1;
+    transform: translateX(0);
+    color: var(--how-bg);
+  }
+  100% {
+    color: var(--leaf-v);
+  }
+}
+
+/* —— Mini visualizations —— */
+.tree-viz {
+  height: 80px;
+  max-width: 280px;
+}
+
+.tree-viz--wide {
+  height: 80px;
+  max-width: 300px;
+}
+
+.mv {
+  overflow: visible;
+}
+
 .mv-rail {
   stroke: var(--viz-muted);
   stroke-width: 1.25;
+  fill: none;
 }
+
 .mv-arrowhead,
 .mv-user-dot {
   fill: var(--viz-muted);
 }
-.mv-packet {
+
+.mv-packet,
+.mv-token {
   fill: var(--viz-packet);
-  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--viz-packet) 70%, transparent));
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--viz-packet) 75%, transparent));
 }
+
 .mv-chip,
-.mv-mod-frame,
-.mv-cache-box,
-.mv-side-brain,
-.mv-vault-big,
-.mv-vault-tok,
-.mv-gear-ring {
-  fill: transparent;
+.mv-block {
+  fill: color-mix(in srgb, var(--fg) 4%, transparent);
   stroke: var(--border);
-  stroke-width: 1.1;
+  stroke-width: 1.15;
 }
-.mv-gear-hub {
-  fill: var(--viz-muted);
-  stroke: none;
-}
-.mv-label,
-.mv-mod-title {
+
+.mv-label {
   fill: var(--muted);
   font-family: "Chakra Petch", sans-serif;
-  font-size: 7.5px;
+  font-size: 8px;
   font-weight: 600;
+  letter-spacing: 0.02em;
 }
-.mv-node {
-  fill: transparent;
+
+.mv-gn {
+  fill: color-mix(in srgb, var(--viz-accent) 20%, transparent);
   stroke: var(--viz-muted);
   stroke-width: 1.2;
 }
 
+.mv-ring {
+  fill: none;
+  stroke: color-mix(in srgb, var(--viz-accent) 35%, transparent);
+  stroke-width: 1;
+}
+
+.mv-orbit {
+  fill: none;
+  stroke: var(--viz-muted);
+  stroke-width: 1.2;
+  stroke-dasharray: 4 4;
+}
+
+.mv-scan {
+  stroke: var(--viz-accent);
+  stroke-dasharray: 3 5;
+  opacity: 0.5;
+}
+
+.mv-sprout {
+  stroke: var(--viz-ok);
+  fill: none;
+  stroke-width: 1.4;
+}
+
+.mv-funnel {
+  opacity: 0.7;
+}
+
+/* User — cycle surfaces */
+.mv-surf {
+  animation: mv-surf-cycle calc(4.8s * var(--viz-scale, 1)) ease-in-out infinite;
+}
+.mv-surf-0 { animation-delay: 0s; }
+.mv-surf-1 { animation-delay: calc(-1.2s * var(--viz-scale, 1)); }
+.mv-surf-2 { animation-delay: calc(-2.4s * var(--viz-scale, 1)); }
+.mv-surf-3 { animation-delay: calc(-3.6s * var(--viz-scale, 1)); }
+
+@keyframes mv-surf-cycle {
+  0%, 12%, 100% { stroke: var(--border); }
+  18%, 30% { stroke: var(--viz-accent); fill: color-mix(in srgb, var(--viz-accent) 16%, transparent); }
+  38% { stroke: var(--border); }
+}
+
 .mv-user-packet {
-  animation: mv-user-drop calc(3.6s * var(--viz-scale, 1)) ease-in-out infinite;
+  animation: mv-user-drop calc(3.2s * var(--viz-scale, 1)) ease-in-out infinite;
 }
+
 @keyframes mv-user-drop {
-  0%,
-  12% {
-    cy: 20;
-    opacity: 0;
-  }
-  18% {
-    opacity: 1;
-  }
-  70% {
-    cy: 56;
-    opacity: 1;
-  }
-  82%,
-  100% {
-    cy: 64;
-    opacity: 0;
-  }
+  0%, 10% { cy: 22; opacity: 0; }
+  20% { opacity: 1; }
+  55% { cy: 48; opacity: 1; }
+  75%, 100% { cy: 58; opacity: 0; }
 }
-.mv-user-dot {
-  animation: mv-soft-pulse calc(3.6s * var(--viz-scale, 1)) ease-in-out infinite;
+
+.mv-session {
+  animation: mv-soft-lit calc(3.2s * var(--viz-scale, 1)) ease-in-out infinite;
 }
+
+@keyframes mv-soft-lit {
+  0%, 45% { stroke: var(--border); }
+  55%, 75% { stroke: var(--viz-ok); }
+  100% { stroke: var(--border); }
+}
+
 @keyframes mv-soft-pulse {
-  0%,
-  100% {
-    opacity: 0.55;
-  }
-  40% {
-    opacity: 1;
-  }
+  0%, 100% { opacity: 0.55; }
+  40% { opacity: 1; }
 }
 
-.mv-intent-in {
-  animation: mv-intent-in calc(4.2s * var(--viz-scale, 1)) ease-in-out infinite;
+/* Context pool */
+.mv-pool-in {
+  animation: mv-slide-x calc(3.8s * var(--viz-scale, 1)) ease-in-out infinite;
 }
-.mv-intent-out {
-  animation: mv-intent-out calc(4.2s * var(--viz-scale, 1)) ease-in-out infinite;
+.mv-pool-out {
+  animation: mv-slide-x-out calc(3.8s * var(--viz-scale, 1)) ease-in-out infinite;
 }
-.mv-chip-1,
-.mv-chip-2,
-.mv-chip-3,
-.mv-chip-4 {
-  animation: mv-chip-lit calc(4.2s * var(--viz-scale, 1)) ease-in-out infinite;
+.mv-pool-i {
+  animation: mv-pool-pop calc(3.8s * var(--viz-scale, 1)) ease-in-out infinite;
 }
-.mv-chip-2 {
-  animation-delay: 0.1s;
-}
-.mv-chip-3 {
-  animation-delay: 0.2s;
-}
-.mv-chip-4 {
-  animation-delay: 0.3s;
-}
-@keyframes mv-intent-in {
-  0% {
-    cx: 18;
-    opacity: 0;
-  }
-  35% {
-    cx: 70;
-    opacity: 1;
-  }
-  45%,
-  100% {
-    opacity: 0;
-  }
-}
-@keyframes mv-intent-out {
-  0%,
-  55% {
-    opacity: 0;
-  }
-  65%,
-  85% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-@keyframes mv-chip-lit {
-  0%,
-  30% {
-    stroke: var(--border);
-  }
-  40%,
-  55% {
-    stroke: var(--viz-accent);
-  }
-  70%,
-  100% {
-    stroke: var(--border);
-  }
+.mv-pool-1 { animation-delay: 0.12s; }
+.mv-pool-2 { animation-delay: 0.24s; }
+.mv-pool-3 { animation-delay: 0.36s; }
+.mv-pool-4 { animation-delay: 0.48s; }
+.mv-pool-5 { animation-delay: 0.6s; }
+.mv-curated {
+  animation: mv-soft-lit calc(3.8s * var(--viz-scale, 1)) ease-in-out infinite;
+  animation-delay: 0.8s;
 }
 
-.mv-plan-in {
-  animation: mv-plan-in calc(4.8s * var(--viz-scale, 1)) ease-in-out infinite;
+@keyframes mv-slide-x {
+  0% { cx: 10; opacity: 0; }
+  15% { opacity: 1; }
+  35% { cx: 36; opacity: 0; }
+  100% { opacity: 0; }
 }
-.mv-branch-a,
-.mv-pick-a {
-  animation: mv-plan-eval-a calc(4.8s * var(--viz-scale, 1)) ease-in-out infinite;
+@keyframes mv-slide-x-out {
+  0%, 55% { opacity: 0; cx: 210; }
+  65% { opacity: 1; }
+  85% { cx: 230; opacity: 1; }
+  100% { opacity: 0; }
 }
-.mv-branch-b,
-.mv-pick-b {
-  animation: mv-plan-eval-b calc(4.8s * var(--viz-scale, 1)) ease-in-out infinite;
-}
-.mv-branch-c,
-.mv-pick-c {
-  animation: mv-plan-eval-c calc(4.8s * var(--viz-scale, 1)) ease-in-out infinite;
-}
-.mv-plan-out {
-  animation: mv-plan-out calc(4.8s * var(--viz-scale, 1)) ease-in-out infinite;
-}
-@keyframes mv-plan-in {
-  0% {
-    opacity: 0;
-  }
-  15% {
-    opacity: 1;
-  }
-  35%,
-  100% {
-    opacity: 0;
-  }
-}
-@keyframes mv-plan-eval-a {
-  0%,
-  25% {
-    opacity: 0.35;
-  }
-  35%,
-  48% {
-    opacity: 1;
-    stroke: var(--viz-accent);
-  }
-  58%,
-  100% {
-    opacity: 0.25;
-  }
-}
-@keyframes mv-plan-eval-b {
-  0%,
-  40% {
-    opacity: 0.35;
-  }
-  50%,
-  78% {
-    opacity: 1;
-    stroke: var(--viz-ok);
-  }
-  90%,
-  100% {
-    opacity: 0.35;
-  }
-}
-@keyframes mv-plan-eval-c {
-  0%,
-  30% {
-    opacity: 0.35;
-  }
-  38%,
-  50% {
-    opacity: 0.9;
-  }
-  60%,
-  100% {
-    opacity: 0.22;
-  }
-}
-@keyframes mv-plan-out {
-  0%,
-  62% {
-    opacity: 0;
-  }
-  70%,
-  88% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
+@keyframes mv-pool-pop {
+  0%, 20% { stroke: var(--border); }
+  30%, 45% { stroke: var(--viz-accent); fill: color-mix(in srgb, var(--viz-accent) 14%, transparent); }
+  60%, 100% { stroke: var(--border); }
 }
 
+/* Memory graph */
+.mv-ring-a {
+  animation: mv-ring calc(4s * var(--viz-scale, 1)) ease-out infinite;
+}
+.mv-ring-b {
+  animation: mv-ring calc(4s * var(--viz-scale, 1)) ease-out infinite;
+  animation-delay: 0.6s;
+}
+@keyframes mv-ring {
+  0% { r: 10; opacity: 0.7; }
+  100% { r: 36; opacity: 0; }
+}
 .mv-graph-pulse {
-  animation: mv-graph-search calc(5s * var(--viz-scale, 1)) ease-in-out infinite;
+  animation: mv-graph-hop calc(4.5s * var(--viz-scale, 1)) ease-in-out infinite;
+}
+@keyframes mv-graph-hop {
+  0% { cx: 72; cy: 24; opacity: 0; }
+  10% { opacity: 1; }
+  30% { cx: 110; cy: 40; }
+  55% { cx: 148; cy: 24; }
+  75% { cx: 170; cy: 40; }
+  90%, 100% { opacity: 0; }
 }
 .mv-gn-hit {
-  animation: mv-graph-hit calc(5s * var(--viz-scale, 1)) ease-in-out infinite;
+  animation: mv-gn-hit calc(4.5s * var(--viz-scale, 1)) ease-in-out infinite;
 }
-.mv-vault-big {
-  animation: mv-vault-compress calc(5.5s * var(--viz-scale, 1)) ease-in-out infinite;
-  transform-origin: 120px 40px;
+@keyframes mv-gn-hit {
+  0%, 25% { stroke: var(--viz-muted); }
+  30%, 50% { stroke: var(--viz-accent); fill: color-mix(in srgb, var(--viz-accent) 45%, transparent); }
+  65%, 100% { stroke: var(--viz-muted); }
 }
-.mv-vault-tok,
-.mv-vault-tok-label {
-  animation: mv-vault-token calc(5.5s * var(--viz-scale, 1)) ease-in-out infinite;
+.mv-scan {
+  animation: mv-scan-dash calc(2.4s * var(--viz-scale, 1)) linear infinite;
 }
-.mv-cache-req {
-  animation: mv-cache-req calc(4.6s * var(--viz-scale, 1)) ease-in-out infinite;
+@keyframes mv-scan-dash {
+  to { stroke-dashoffset: -24; }
 }
-.mv-cache-hit {
-  stroke: var(--viz-ok);
-  stroke-width: 1.5;
-  fill: none;
-  animation: mv-cache-hit calc(4.6s * var(--viz-scale, 1)) ease-in-out infinite;
+.mv-mem-tag {
+  animation: mv-soft-pulse calc(4.5s * var(--viz-scale, 1)) ease-in-out infinite;
 }
-.mv-cache-miss {
-  stroke: var(--viz-warn);
-  stroke-width: 1.25;
-  fill: none;
-  animation: mv-cache-miss calc(4.6s * var(--viz-scale, 1)) ease-in-out infinite;
+.mv-mem-tag2 {
+  animation: mv-soft-pulse calc(4.5s * var(--viz-scale, 1)) ease-in-out infinite;
+  animation-delay: 0.4s;
+}
+
+/* Sidecar */
+.mv-side-brain {
+  animation: mv-side-brain calc(4s * var(--viz-scale, 1)) ease-in-out infinite;
+}
+@keyframes mv-side-brain {
+  0%, 30% { stroke: var(--border); }
+  40%, 65% { stroke: var(--viz-accent); fill: color-mix(in srgb, var(--viz-accent) 16%, transparent); }
+  100% { stroke: var(--border); }
 }
 .mv-side-in {
-  animation: mv-side-in calc(4.4s * var(--viz-scale, 1)) ease-in-out infinite;
+  animation: mv-side-in calc(4s * var(--viz-scale, 1)) ease-in-out infinite;
 }
-.mv-side-brain {
-  animation: mv-side-brain calc(4.4s * var(--viz-scale, 1)) ease-in-out infinite;
+@keyframes mv-side-in {
+  0% { cx: 96; opacity: 0; }
+  25% { opacity: 1; }
+  45% { cx: 118; opacity: 0; }
+  100% { opacity: 0; }
 }
 .mv-side-out-a,
 .mv-side-out-b,
 .mv-side-out-c {
-  animation: mv-side-out calc(4.4s * var(--viz-scale, 1)) ease-in-out infinite;
+  animation: mv-side-out calc(4s * var(--viz-scale, 1)) ease-in-out infinite;
 }
-.mv-mem-comm {
-  animation: mv-mem-comm calc(3.8s * var(--viz-scale, 1)) linear infinite;
+.mv-side-out-b { animation-delay: 0.12s; }
+.mv-side-out-c { animation-delay: 0.24s; }
+@keyframes mv-side-out {
+  0%, 50% { opacity: 0; }
+  60% { opacity: 1; }
+  90%, 100% { opacity: 0; }
 }
-.mv-sidecar-frame {
-  stroke-dasharray: 4 3;
-  animation: mv-sidecar-dash 6s linear infinite;
+.mv-side-sub {
+  opacity: 0.7;
 }
-@keyframes mv-graph-search {
-  0% {
-    cx: 24;
-    cy: 40;
-    opacity: 0;
-  }
-  10% {
-    opacity: 1;
-  }
-  75% {
-    cx: 40;
-    cy: 52;
-  }
-  100% {
-    opacity: 0;
-  }
+
+/* Diet / vault compress */
+.mv-block {
+  animation: mv-block-squash calc(5s * var(--viz-scale, 1)) ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
 }
-@keyframes mv-graph-hit {
-  0%,
-  60% {
-    stroke: var(--viz-muted);
-  }
-  70%,
-  82% {
-    stroke: var(--viz-accent);
-  }
-  100% {
-    stroke: var(--viz-muted);
-  }
+.mv-b1 { animation-delay: 0.05s; }
+.mv-b2 { animation-delay: 0.1s; }
+.mv-b3 { animation-delay: 0.15s; }
+.mv-b4 { animation-delay: 0.2s; }
+@keyframes mv-block-squash {
+  0%, 25% { opacity: 1; transform: scale(1); }
+  45%, 60% { opacity: 0.15; transform: scale(0.35); }
+  80%, 100% { opacity: 1; transform: scale(1); }
 }
-@keyframes mv-vault-compress {
-  0%,
-  20% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  40%,
-  55% {
-    transform: scale(0.35);
-    opacity: 0.15;
-  }
-  75%,
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
+.mv-vault-tok,
+.mv-vault-tok-label {
+  animation: mv-vault-token calc(5s * var(--viz-scale, 1)) ease-in-out infinite;
 }
 @keyframes mv-vault-token {
-  0%,
-  25% {
-    opacity: 0.15;
-  }
-  40%,
-  60% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0.2;
-  }
+  0%, 30% { opacity: 0.2; }
+  45%, 65% { opacity: 1; stroke: var(--viz-accent); }
+  85%, 100% { opacity: 0.25; }
 }
-@keyframes mv-cache-req {
-  0% {
-    opacity: 0;
-  }
-  20% {
-    opacity: 1;
-  }
-  40% {
-    opacity: 0;
-  }
-  65% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
+.mv-diet-pkt {
+  animation: mv-diet-pkt calc(5s * var(--viz-scale, 1)) ease-in-out infinite;
 }
-@keyframes mv-cache-hit {
-  0%,
-  28% {
-    opacity: 0;
-  }
-  32%,
-  48% {
-    opacity: 1;
-  }
-  55%,
-  100% {
-    opacity: 0;
-  }
-}
-@keyframes mv-cache-miss {
-  0%,
-  55% {
-    opacity: 0;
-  }
-  62%,
-  85% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-@keyframes mv-side-in {
-  0% {
-    opacity: 0;
-  }
-  20% {
-    opacity: 1;
-  }
-  40%,
-  100% {
-    opacity: 0;
-  }
-}
-@keyframes mv-side-brain {
-  0%,
-  30% {
-    stroke: var(--border);
-  }
-  40%,
-  60% {
-    stroke: var(--viz-accent);
-  }
-  100% {
-    stroke: var(--border);
-  }
-}
-@keyframes mv-side-out {
-  0%,
-  45% {
-    opacity: 0;
-  }
-  55% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-@keyframes mv-mem-comm {
-  0% {
-    cx: 76;
-    opacity: 0;
-  }
-  50% {
-    opacity: 0.9;
-  }
-  100% {
-    cx: 244;
-    opacity: 0;
-  }
-}
-@keyframes mv-sidecar-dash {
-  to {
-    stroke-dashoffset: -28;
-  }
+@keyframes mv-diet-pkt {
+  0%, 25% { opacity: 0; cx: 96; }
+  35% { opacity: 1; }
+  50% { cx: 124; opacity: 0; }
+  100% { opacity: 0; }
 }
 
-.mv-tool-in {
-  animation: mv-tool-in calc(5s * var(--viz-scale, 1)) ease-in-out infinite;
+/* Assemble layers */
+.mv-layer {
+  animation: mv-layer-lit calc(4.2s * var(--viz-scale, 1)) ease-in-out infinite;
 }
-.mv-tool-out {
-  animation: mv-tool-out calc(5s * var(--viz-scale, 1)) ease-in-out infinite;
+.mv-layer-1 { animation-delay: 0.15s; }
+.mv-layer-2 { animation-delay: 0.3s; }
+.mv-layer-3 { animation-delay: 0.45s; }
+@keyframes mv-layer-lit {
+  0%, 15% { stroke: var(--border); }
+  25%, 40% { stroke: var(--viz-accent); }
+  55%, 100% { stroke: var(--border); }
 }
-.mv-tool-1 .mv-chip,
-.mv-tool-2 .mv-chip,
-.mv-tool-3 .mv-chip,
-.mv-tool-4 .mv-chip,
-.mv-tool-5 .mv-chip {
-  animation: mv-tool-lit calc(5s * var(--viz-scale, 1)) ease-in-out infinite;
+.mv-final {
+  animation: mv-soft-lit calc(4.2s * var(--viz-scale, 1)) ease-in-out infinite;
+  animation-delay: 0.7s;
 }
-.mv-tool-2 .mv-chip {
-  animation-delay: -1s;
+.mv-assemble-pkt {
+  animation: mv-assemble-pkt calc(4.2s * var(--viz-scale, 1)) ease-in-out infinite;
 }
-.mv-tool-3 .mv-chip {
-  animation-delay: -2s;
-}
-.mv-tool-4 .mv-chip {
-  animation-delay: -3s;
-}
-.mv-tool-5 .mv-chip {
-  animation-delay: -4s;
-}
-@keyframes mv-tool-in {
-  0%,
-  5% {
-    opacity: 0;
-  }
-  12% {
-    opacity: 1;
-  }
-  22%,
-  100% {
-    opacity: 0;
-  }
-}
-@keyframes mv-tool-out {
-  0%,
-  55% {
-    opacity: 0;
-  }
-  65%,
-  85% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-@keyframes mv-tool-lit {
-  0%,
-  8% {
-    stroke: var(--border);
-  }
-  12%,
-  22% {
-    stroke: var(--viz-accent);
-  }
-  30%,
-  100% {
-    stroke: var(--border);
-  }
+@keyframes mv-assemble-pkt {
+  0%, 40% { opacity: 0; cx: 120; }
+  50% { opacity: 1; }
+  70% { cx: 152; opacity: 0; }
+  100% { opacity: 0; }
 }
 
-.mv-gear-1 {
-  animation: mv-gear-cw calc(3.2s * var(--viz-scale, 1)) linear infinite;
-  transform-origin: center;
-  transform-box: fill-box;
-}
-.mv-gear-2 {
-  animation: mv-gear-ccw calc(2.4s * var(--viz-scale, 1)) linear infinite;
-  transform-origin: center;
-  transform-box: fill-box;
-}
-.mv-sym-in {
-  animation: mv-sym-in calc(3.6s * var(--viz-scale, 1)) ease-in-out infinite;
-}
-.mv-sym-out {
-  animation: mv-sym-out calc(3.6s * var(--viz-scale, 1)) ease-in-out infinite;
-}
-.mv-sym-out-box {
-  animation: mv-chip-lit calc(3.6s * var(--viz-scale, 1)) ease-in-out infinite;
-}
-@keyframes mv-gear-cw {
-  to {
-    transform: rotate(360deg);
-  }
-}
-@keyframes mv-gear-ccw {
-  to {
-    transform: rotate(-360deg);
-  }
-}
-@keyframes mv-sym-in {
-  0% {
-    opacity: 0;
-  }
-  15% {
-    opacity: 1;
-  }
-  35%,
-  100% {
-    opacity: 0;
-  }
-}
-@keyframes mv-sym-out {
-  0%,
-  45% {
-    opacity: 0;
-  }
-  55%,
-  80% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-
+/* Provider routing */
 .mv-ai-in {
-  animation: mv-ai-in calc(6s * var(--viz-scale, 1)) ease-in-out infinite;
+  animation: mv-ai-in calc(5.5s * var(--viz-scale, 1)) ease-in-out infinite;
 }
-.mv-ai-local {
-  animation: mv-ai-route-local calc(6s * var(--viz-scale, 1)) ease-in-out infinite;
+@keyframes mv-ai-in {
+  0%, 8% { opacity: 0; cx: 10; }
+  15% { opacity: 1; }
+  28% { cx: 40; opacity: 0; }
+  100% { opacity: 0; }
 }
-.mv-ai-remote {
-  animation: mv-ai-route-remote calc(6s * var(--viz-scale, 1)) ease-in-out infinite;
+.mv-ai-local { animation: mv-route-local calc(5.5s * var(--viz-scale, 1)) ease-in-out infinite; }
+.mv-ai-remote { animation: mv-route-remote calc(5.5s * var(--viz-scale, 1)) ease-in-out infinite; }
+.mv-ai-hybrid { animation: mv-route-hybrid calc(5.5s * var(--viz-scale, 1)) ease-in-out infinite; }
+.mv-ai-path-l { animation: mv-path-local calc(5.5s * var(--viz-scale, 1)) ease-in-out infinite; }
+.mv-ai-path-r { animation: mv-path-remote calc(5.5s * var(--viz-scale, 1)) ease-in-out infinite; }
+.mv-ai-path-h { animation: mv-path-hybrid calc(5.5s * var(--viz-scale, 1)) ease-in-out infinite; }
+@keyframes mv-route-local {
+  0%, 10% { stroke: var(--border); }
+  15%, 32% { stroke: var(--viz-ok); fill: color-mix(in srgb, var(--viz-ok) 14%, transparent); }
+  40%, 100% { stroke: var(--border); fill: color-mix(in srgb, var(--fg) 4%, transparent); }
 }
-.mv-ai-hybrid {
-  animation: mv-ai-route-hybrid calc(6s * var(--viz-scale, 1)) ease-in-out infinite;
+@keyframes mv-route-remote {
+  0%, 38% { stroke: var(--border); }
+  45%, 62% { stroke: var(--viz-accent); fill: color-mix(in srgb, var(--viz-accent) 16%, transparent); }
+  70%, 100% { stroke: var(--border); }
+}
+@keyframes mv-route-hybrid {
+  0%, 70% { stroke: var(--border); }
+  78%, 92% { stroke: var(--viz-warn); fill: color-mix(in srgb, var(--viz-warn) 14%, transparent); }
+  100% { stroke: var(--border); }
+}
+@keyframes mv-path-local {
+  0%, 10% { opacity: 0.25; }
+  15%, 32% { opacity: 1; stroke: var(--viz-ok); }
+  40%, 100% { opacity: 0.25; stroke: var(--viz-muted); }
+}
+@keyframes mv-path-remote {
+  0%, 38% { opacity: 0.25; }
+  45%, 62% { opacity: 1; stroke: var(--viz-accent); }
+  70%, 100% { opacity: 0.25; stroke: var(--viz-muted); }
+}
+@keyframes mv-path-hybrid {
+  0%, 70% { opacity: 0.25; }
+  78%, 92% { opacity: 1; stroke: var(--viz-warn); }
+  100% { opacity: 0.25; stroke: var(--viz-muted); }
 }
 .mv-token-1,
 .mv-token-2,
 .mv-token-3 {
-  fill: var(--viz-packet);
-  animation: mv-tokens calc(6s * var(--viz-scale, 1)) ease-in-out infinite;
+  animation: mv-tokens calc(5.5s * var(--viz-scale, 1)) ease-in-out infinite;
+}
+.mv-token-2 { animation-delay: 0.08s; }
+.mv-token-3 { animation-delay: 0.16s; }
+@keyframes mv-tokens {
+  0%, 20% { opacity: 0; cx: 198; }
+  28% { opacity: 1; }
+  40% { cx: 230; opacity: 0; }
+  100% { opacity: 0; }
 }
 .mv-ai-out {
-  animation: mv-ai-out calc(6s * var(--viz-scale, 1)) ease-in-out infinite;
-}
-@keyframes mv-ai-in {
-  0%,
-  5% {
-    opacity: 0;
-  }
-  12% {
-    opacity: 1;
-  }
-  22%,
-  100% {
-    opacity: 0;
-  }
-}
-@keyframes mv-ai-route-local {
-  0%,
-  8% {
-    stroke: var(--border);
-  }
-  12%,
-  28% {
-    stroke: var(--viz-ok);
-  }
-  34%,
-  100% {
-    stroke: var(--border);
-  }
-}
-@keyframes mv-ai-route-remote {
-  0%,
-  38% {
-    stroke: var(--border);
-  }
-  45%,
-  60% {
-    stroke: var(--viz-accent);
-  }
-  68%,
-  100% {
-    stroke: var(--border);
-  }
-}
-@keyframes mv-ai-route-hybrid {
-  0%,
-  70% {
-    stroke: var(--border);
-  }
-  78%,
-  92% {
-    stroke: var(--viz-warn);
-  }
-  100% {
-    stroke: var(--border);
-  }
-}
-@keyframes mv-tokens {
-  0%,
-  15% {
-    opacity: 0;
-  }
-  20% {
-    opacity: 1;
-  }
-  30%,
-  100% {
-    opacity: 0;
-  }
+  animation: mv-ai-out calc(5.5s * var(--viz-scale, 1)) ease-in-out infinite;
 }
 @keyframes mv-ai-out {
-  0%,
-  25% {
-    opacity: 0;
-  }
-  28%,
-  32% {
-    opacity: 1;
-  }
-  36%,
-  100% {
-    opacity: 0;
-  }
+  0%, 30% { opacity: 0; }
+  35%, 42% { opacity: 1; }
+  48%, 100% { opacity: 0; }
 }
 
-.mv-ver-packet {
-  animation: mv-ver-packet calc(5.2s * var(--viz-scale, 1)) ease-in-out infinite;
+/* Runtime orbit loop */
+.mv-orbit {
+  animation: mv-orbit-spin calc(6s * var(--viz-scale, 1)) linear infinite;
 }
-.mv-check-1 .mv-chip,
-.mv-check-2 .mv-chip,
-.mv-check-3 .mv-chip,
-.mv-check-4 .mv-chip {
-  animation: mv-ver-ok calc(5.2s * var(--viz-scale, 1)) ease-in-out infinite;
+@keyframes mv-orbit-spin {
+  to { stroke-dashoffset: -40; }
 }
-.mv-check-2 .mv-chip {
-  animation-delay: 0.35s;
+.mv-orbit-arm {
+  transform-origin: 140px 40px;
+  transform-box: view-box;
+  animation: mv-orbit-arm calc(3.2s * var(--viz-scale, 1)) linear infinite;
 }
-.mv-check-3 .mv-chip {
-  animation-delay: 0.7s;
+@keyframes mv-orbit-arm {
+  to { transform: rotate(360deg); }
 }
-.mv-check-4 .mv-chip {
-  animation-delay: 1.05s;
+.mv-rt {
+  animation: mv-rt-lit calc(4.8s * var(--viz-scale, 1)) ease-in-out infinite;
 }
-.mv-ver-fail {
-  fill: none;
-  stroke: #ef4444;
-  stroke-width: 1.25;
-  animation: mv-ver-fail calc(5.2s * var(--viz-scale, 1)) ease-in-out infinite;
+.mv-rt-1 { animation-delay: -1.2s; }
+.mv-rt-2 { animation-delay: -2.4s; }
+.mv-rt-3 { animation-delay: -3.6s; }
+@keyframes mv-rt-lit {
+  0%, 10% { stroke: var(--border); }
+  15%, 28% { stroke: var(--viz-accent); fill: color-mix(in srgb, var(--viz-accent) 16%, transparent); }
+  40%, 100% { stroke: var(--border); }
 }
-@keyframes mv-ver-packet {
-  0% {
-    opacity: 0;
-  }
-  8% {
-    opacity: 1;
-  }
-  55% {
-    opacity: 1;
-  }
-  62%,
-  100% {
-    opacity: 0;
-  }
-}
-@keyframes mv-ver-ok {
-  0%,
-  10% {
-    stroke: var(--border);
-  }
-  18%,
-  32% {
-    stroke: var(--viz-ok);
-  }
-  42%,
-  100% {
-    stroke: var(--border);
-  }
-}
-@keyframes mv-ver-fail {
-  0%,
-  68% {
-    opacity: 0;
-  }
-  74%,
-  86% {
-    opacity: 0.85;
-  }
-  100% {
-    opacity: 0;
-  }
+.mv-rt-center {
+  animation: mv-soft-pulse calc(2s * var(--viz-scale, 1)) ease-in-out infinite;
+  fill: var(--viz-accent);
 }
 
+/* Answer */
 .mv-answer-packet {
-  animation: mv-answer-up calc(3.8s * var(--viz-scale, 1)) ease-in-out infinite;
+  animation: mv-answer-down calc(3.4s * var(--viz-scale, 1)) ease-in-out infinite;
 }
-.mv-answer-arrow {
-  animation: mv-soft-pulse calc(3.8s * var(--viz-scale, 1)) ease-in-out infinite;
+@keyframes mv-answer-down {
+  0%, 15% { cy: 28; opacity: 0; }
+  25% { opacity: 1; }
+  70% { cy: 60; opacity: 1; }
+  85%, 100% { cy: 68; opacity: 0; }
 }
-@keyframes mv-answer-up {
-  0%,
-  15% {
-    cy: 58;
-    opacity: 0;
-  }
-  22% {
-    opacity: 1;
-  }
-  70% {
-    cy: 18;
-    opacity: 1;
-  }
-  85%,
-  100% {
-    opacity: 0;
-  }
+.mv-answer-arrow,
+.mv-ans-box {
+  animation: mv-soft-lit calc(3.4s * var(--viz-scale, 1)) ease-in-out infinite;
+}
+.mv-user-dot {
+  animation: mv-soft-pulse calc(3.4s * var(--viz-scale, 1)) ease-in-out infinite;
+}
+
+/* After turn */
+.mv-af {
+  animation: mv-af-lit calc(4.5s * var(--viz-scale, 1)) ease-in-out infinite;
+}
+.mv-af-1 { animation-delay: 0.35s; }
+.mv-af-2 { animation-delay: 0.7s; }
+@keyframes mv-af-lit {
+  0%, 15% { stroke: var(--border); }
+  25%, 45% { stroke: var(--viz-ok); fill: color-mix(in srgb, var(--viz-ok) 12%, transparent); }
+  60%, 100% { stroke: var(--border); }
+}
+.mv-after-pkt {
+  animation: mv-after-pkt calc(4.5s * var(--viz-scale, 1)) ease-in-out infinite;
+}
+@keyframes mv-after-pkt {
+  0% { cx: 76; opacity: 0; }
+  15% { opacity: 1; }
+  40% { cx: 130; }
+  70% { cx: 184; opacity: 1; }
+  90%, 100% { cx: 200; opacity: 0; }
+}
+.mv-sprout {
+  animation: mv-sprout calc(4.5s * var(--viz-scale, 1)) ease-in-out infinite;
+}
+@keyframes mv-sprout {
+  0%, 55% { opacity: 0; transform: scale(0.6); }
+  70%, 90% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0.4; }
 }
 
 @media (max-width: 800px) {
