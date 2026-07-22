@@ -53,13 +53,12 @@
       <section id="how-it-works" class="section">
         <h2 class="section__title">How it Works</h2>
         <p class="section__lede">
-          The goal is not to build a smarter model, but to build a smarter
-          inference engine that makes existing models faster, cheaper, more
-          consistent, and able to handle much longer reasoning sessions by
-          remembering and reusing work instead of starting from scratch every
-          time.
+          Neura is a prompt orchestrator plus local state machine. The AI does not
+          “remember” by changing weights — Neura remembers by writing structured
+          local files, graph nodes, embeddings, context-vault blocks, and
+          telemetry, then re-injecting selected pieces into future prompts.
         </p>
-        <p class="section__hint">Watch Neura run live inference simulations — prompts cycle automatically.</p>
+        <p class="section__hint">Watch a full turn loop cycle automatically — from surface capture through memory gardening.</p>
 
         <div class="sim-bar" id="sim-bar" aria-live="polite">
           <span class="sim-bar__dot" aria-hidden="true"></span>
@@ -79,12 +78,12 @@
         </div>
 
         <div class="tree" id="pipeline" aria-label="Interactive inference tree">
-          <!-- USER -->
+          <!-- 1. USER -->
           <div class="tree-stage is-open" data-stage="user">
             <div class="tree-row">
               <button type="button" class="tree-node" aria-expanded="true">
                 <span class="tree-pulse" aria-hidden="true"></span>
-                <span class="tree-label">User</span>
+                <span class="tree-label">User / Capture</span>
                 <span class="tree-viz" data-viz="user" aria-hidden="true"></span>
               </button>
               <div class="tree-branch" aria-hidden="false">
@@ -95,27 +94,33 @@
                 <div class="tree-leaves">
                   <div class="leaf leaf--prompt">
                     <span class="leaf-k">prompt</span>
-                    <span class="leaf-v typewriter" data-field="user.prompt" data-text="awaiting prompt…"></span>
+                    <span class="leaf-v typewriter" data-field="user.prompt" data-text="—"></span>
+                  </div>
+                  <div class="leaf">
+                    <span class="leaf-k">surface</span>
+                    <span class="leaf-v typewriter" data-field="user.surface" data-text="—"></span>
+                  </div>
+                  <div class="leaf">
+                    <span class="leaf-k">captures</span>
+                    <span class="leaf-v typewriter" data-field="user.captures" data-text="—"></span>
                   </div>
                   <div class="leaf">
                     <span class="leaf-k">session</span>
-                    <span class="leaf-v typewriter" data-field="user.session" data-text="awaiting prompt…"></span>
+                    <span class="leaf-v typewriter" data-field="user.session" data-text="—"></span>
                   </div>
                 </div>
               </div>
             </div>
-            <div class="tree-connector" aria-hidden="true">
-              <span class="flow-packet" aria-hidden="true"></span>
-            </div>
+            <div class="tree-connector" aria-hidden="true"><span class="flow-packet" aria-hidden="true"></span></div>
           </div>
 
-          <!-- INTENT -->
-          <div class="tree-stage" data-stage="intent">
+          <!-- 2. CONTEXT POOL -->
+          <div class="tree-stage" data-stage="context">
             <div class="tree-row">
               <button type="button" class="tree-node" aria-expanded="false">
                 <span class="tree-pulse" aria-hidden="true"></span>
-                <span class="tree-label">Intent Parser</span>
-                <span class="tree-viz" data-viz="intent" aria-hidden="true"></span>
+                <span class="tree-label">Context Pool</span>
+                <span class="tree-viz" data-viz="context" aria-hidden="true"></span>
               </button>
               <div class="tree-branch" aria-hidden="true">
                 <svg class="tree-elbow" viewBox="0 0 48 40" aria-hidden="true" preserveAspectRatio="none">
@@ -124,24 +129,20 @@
                 </svg>
                 <div class="tree-leaves">
                   <div class="leaf">
-                    <span class="leaf-k">intent</span>
-                    <span class="leaf-v typewriter" data-field="intent.intent" data-text="—"></span>
-                  </div>
-                  <div class="leaf">
-                    <span class="leaf-k">files</span>
-                    <span class="leaf-v typewriter" data-field="intent.files" data-text="—"></span>
-                  </div>
-                  <div class="leaf">
-                    <span class="leaf-k">constraints</span>
-                    <span class="leaf-v typewriter" data-field="intent.constraints" data-text="—"></span>
+                    <span class="leaf-k">gather</span>
+                    <span class="leaf-v typewriter" data-field="context.gather" data-text="—"></span>
                   </div>
                   <div class="leaf">
                     <span class="leaf-k">tools</span>
-                    <span class="leaf-v typewriter" data-field="intent.tools" data-text="—"></span>
+                    <span class="leaf-v typewriter" data-field="context.tools" data-text="—"></span>
                   </div>
                   <div class="leaf">
-                    <span class="leaf-k">confidence</span>
-                    <span class="leaf-v typewriter" data-field="intent.confidence" data-text="—"></span>
+                    <span class="leaf-k">state</span>
+                    <span class="leaf-v typewriter" data-field="context.state" data-text="—"></span>
+                  </div>
+                  <div class="leaf">
+                    <span class="leaf-k">note</span>
+                    <span class="leaf-v typewriter" data-field="context.note" data-text="—"></span>
                   </div>
                 </div>
               </div>
@@ -149,48 +150,12 @@
             <div class="tree-connector" aria-hidden="true"><span class="flow-packet" aria-hidden="true"></span></div>
           </div>
 
-          <!-- PLANNER -->
-          <div class="tree-stage" data-stage="planner">
-            <div class="tree-row">
-              <button type="button" class="tree-node" aria-expanded="false">
-                <span class="tree-pulse" aria-hidden="true"></span>
-                <span class="tree-label">Planner</span>
-                <span class="tree-viz" data-viz="planner" aria-hidden="true"></span>
-              </button>
-              <div class="tree-branch" aria-hidden="true">
-                <svg class="tree-elbow" viewBox="0 0 48 40" aria-hidden="true" preserveAspectRatio="none">
-                  <path d="M0 20 H18 Q28 20 28 28 V40" />
-                  <path d="M28 20 H48" />
-                </svg>
-                <div class="tree-leaves tree-leaves--plan">
-                  <div class="leaf leaf--path">
-                    <span class="leaf-k">01</span>
-                    <span class="leaf-v typewriter" data-field="planner.1" data-text="—"></span>
-                  </div>
-                  <div class="leaf leaf--path">
-                    <span class="leaf-k">02</span>
-                    <span class="leaf-v typewriter" data-field="planner.2" data-text="—"></span>
-                  </div>
-                  <div class="leaf leaf--path">
-                    <span class="leaf-k">03</span>
-                    <span class="leaf-v typewriter" data-field="planner.3" data-text="—"></span>
-                  </div>
-                  <div class="leaf leaf--path leaf--chosen">
-                    <span class="leaf-k">04</span>
-                    <span class="leaf-v typewriter" data-field="planner.4" data-text="—"></span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="tree-connector" aria-hidden="true"><span class="flow-packet" aria-hidden="true"></span></div>
-          </div>
-
-          <!-- MEMORY -->
+          <!-- 3. MEMORY -->
           <div class="tree-stage" data-stage="memory">
             <div class="tree-row">
               <button type="button" class="tree-node" aria-expanded="false">
                 <span class="tree-pulse" aria-hidden="true"></span>
-                <span class="tree-label">Memory / Cache / Context Vault</span>
+                <span class="tree-label">Memory Lookup</span>
                 <span class="tree-viz tree-viz--wide" data-viz="memory" aria-hidden="true"></span>
               </button>
               <div class="tree-branch" aria-hidden="true">
@@ -199,26 +164,94 @@
                   <path d="M28 20 H48" />
                 </svg>
                 <div class="tree-leaves tree-leaves--memory">
-                  <div class="mem-branch" data-mem="graph">
+                  <div class="leaf">
+                    <span class="leaf-k">store</span>
+                    <span class="leaf-v typewriter" data-field="memory.store" data-text="—"></span>
+                  </div>
+                  <div class="mem-branch" data-mem="embed">
                     <button type="button" class="mem-node" aria-expanded="false">
                       <span class="mem-dot"></span>
-                      Memory Graph
+                      Embed → nearest nodes
                     </button>
                     <div class="mem-leaves" aria-hidden="true">
                       <div class="leaf">
-                        <span class="leaf-k">hit</span>
-                        <span class="leaf-v typewriter" data-field="memory.graph.hit" data-text="—"></span>
+                        <span class="leaf-k">query</span>
+                        <span class="leaf-v typewriter" data-field="memory.embed.query" data-text="—"></span>
                       </div>
+                      <div class="leaf">
+                        <span class="leaf-k">hits</span>
+                        <span class="leaf-v typewriter" data-field="memory.embed.hits" data-text="—"></span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="mem-branch" data-mem="graph">
+                    <button type="button" class="mem-node" aria-expanded="false">
+                      <span class="mem-dot"></span>
+                      Graph cascade
+                    </button>
+                    <div class="mem-leaves" aria-hidden="true">
                       <div class="leaf">
                         <span class="leaf-k">edges</span>
                         <span class="leaf-v typewriter" data-field="memory.graph.edges" data-text="—"></span>
                       </div>
                       <div class="leaf">
-                        <span class="leaf-k">retrieve</span>
-                        <span class="leaf-v typewriter" data-field="memory.graph.retrieve" data-text="—"></span>
+                        <span class="leaf-k">rank</span>
+                        <span class="leaf-v typewriter" data-field="memory.graph.rank" data-text="—"></span>
                       </div>
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
+            <div class="tree-connector" aria-hidden="true"><span class="flow-packet" aria-hidden="true"></span></div>
+          </div>
+
+          <!-- 4. SIDECAR -->
+          <div class="tree-stage" data-stage="sidecar">
+            <div class="tree-row">
+              <button type="button" class="tree-node" aria-expanded="false">
+                <span class="tree-pulse" aria-hidden="true"></span>
+                <span class="tree-label">Sidecar</span>
+                <span class="tree-viz" data-viz="sidecar" aria-hidden="true"></span>
+              </button>
+              <div class="tree-branch" aria-hidden="true">
+                <svg class="tree-elbow" viewBox="0 0 48 40" aria-hidden="true" preserveAspectRatio="none">
+                  <path d="M0 20 H18 Q28 20 28 28 V40" />
+                  <path d="M28 20 H48" />
+                </svg>
+                <div class="tree-leaves">
+                  <div class="leaf leaf--note">
+                    <span class="leaf-k">note</span>
+                    <span class="leaf-v typewriter" data-field="sidecar.note" data-text="—"></span>
+                  </div>
+                  <div class="leaf">
+                    <span class="leaf-k">jobs</span>
+                    <span class="leaf-v typewriter" data-field="sidecar.jobs" data-text="—"></span>
+                  </div>
+                  <div class="leaf">
+                    <span class="leaf-k">status</span>
+                    <span class="leaf-v typewriter" data-field="sidecar.status" data-text="—"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="tree-connector" aria-hidden="true"><span class="flow-packet" aria-hidden="true"></span></div>
+          </div>
+
+          <!-- 5. CONTEXT DIET -->
+          <div class="tree-stage" data-stage="diet">
+            <div class="tree-row">
+              <button type="button" class="tree-node" aria-expanded="false">
+                <span class="tree-pulse" aria-hidden="true"></span>
+                <span class="tree-label">Context Diet</span>
+                <span class="tree-viz" data-viz="diet" aria-hidden="true"></span>
+              </button>
+              <div class="tree-branch" aria-hidden="true">
+                <svg class="tree-elbow" viewBox="0 0 48 40" aria-hidden="true" preserveAspectRatio="none">
+                  <path d="M0 20 H18 Q28 20 28 28 V40" />
+                  <path d="M28 20 H48" />
+                </svg>
+                <div class="tree-leaves tree-leaves--memory">
                   <div class="mem-branch" data-mem="vault">
                     <button type="button" class="mem-node" aria-expanded="false">
                       <span class="mem-dot"></span>
@@ -227,47 +260,31 @@
                     <div class="mem-leaves" aria-hidden="true">
                       <div class="leaf">
                         <span class="leaf-k">compress</span>
-                        <span class="leaf-v typewriter" data-field="memory.vault.compress" data-text="—"></span>
+                        <span class="leaf-v typewriter" data-field="diet.vault.compress" data-text="—"></span>
                       </div>
                       <div class="leaf">
                         <span class="leaf-k">store</span>
-                        <span class="leaf-v typewriter" data-field="memory.vault.store" data-text="—"></span>
+                        <span class="leaf-v typewriter" data-field="diet.vault.store" data-text="—"></span>
                       </div>
                       <div class="leaf">
-                        <span class="leaf-k">restore</span>
-                        <span class="leaf-v typewriter" data-field="memory.vault.restore" data-text="—"></span>
+                        <span class="leaf-k">rule</span>
+                        <span class="leaf-v typewriter" data-field="diet.vault.rule" data-text="—"></span>
                       </div>
                     </div>
                   </div>
-                  <div class="mem-branch" data-mem="cache">
+                  <div class="mem-branch" data-mem="tokens">
                     <button type="button" class="mem-node" aria-expanded="false">
                       <span class="mem-dot"></span>
-                      Cache
+                      Token Budget
                     </button>
                     <div class="mem-leaves" aria-hidden="true">
                       <div class="leaf">
-                        <span class="leaf-k">lookup</span>
-                        <span class="leaf-v typewriter" data-field="memory.cache.lookup" data-text="—"></span>
+                        <span class="leaf-k">tokenizer</span>
+                        <span class="leaf-v typewriter" data-field="diet.tokens.tokenizer" data-text="—"></span>
                       </div>
                       <div class="leaf">
-                        <span class="leaf-k">path</span>
-                        <span class="leaf-v typewriter" data-field="memory.cache.path" data-text="—"></span>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="mem-branch" data-mem="sidecar">
-                    <button type="button" class="mem-node" aria-expanded="false">
-                      <span class="mem-dot"></span>
-                      Local Sidecar
-                    </button>
-                    <div class="mem-leaves" aria-hidden="true">
-                      <div class="leaf leaf--note">
-                        <span class="leaf-k">note</span>
-                        <span class="leaf-v typewriter" data-field="memory.sidecar.note" data-text="—"></span>
-                      </div>
-                      <div class="leaf">
-                        <span class="leaf-k">jobs</span>
-                        <span class="leaf-v typewriter" data-field="memory.sidecar.jobs" data-text="—"></span>
+                        <span class="leaf-k">uses</span>
+                        <span class="leaf-v typewriter" data-field="diet.tokens.uses" data-text="—"></span>
                       </div>
                     </div>
                   </div>
@@ -277,13 +294,13 @@
             <div class="tree-connector" aria-hidden="true"><span class="flow-packet" aria-hidden="true"></span></div>
           </div>
 
-          <!-- TOOLS -->
-          <div class="tree-stage" data-stage="tools">
+          <!-- 6. ASSEMBLE -->
+          <div class="tree-stage" data-stage="assemble">
             <div class="tree-row">
               <button type="button" class="tree-node" aria-expanded="false">
                 <span class="tree-pulse" aria-hidden="true"></span>
-                <span class="tree-label">Tools</span>
-                <span class="tree-viz" data-viz="tools" aria-hidden="true"></span>
+                <span class="tree-label">Assemble Prompt</span>
+                <span class="tree-viz" data-viz="assemble" aria-hidden="true"></span>
               </button>
               <div class="tree-branch" aria-hidden="true">
                 <svg class="tree-elbow" viewBox="0 0 48 40" aria-hidden="true" preserveAspectRatio="none">
@@ -292,20 +309,16 @@
                 </svg>
                 <div class="tree-leaves">
                   <div class="leaf">
-                    <span class="leaf-k">files</span>
-                    <span class="leaf-v typewriter" data-field="tools.files" data-text="—"></span>
+                    <span class="leaf-k">layers</span>
+                    <span class="leaf-v typewriter" data-field="assemble.layers" data-text="—"></span>
                   </div>
                   <div class="leaf">
-                    <span class="leaf-k">shell</span>
-                    <span class="leaf-v typewriter" data-field="tools.shell" data-text="—"></span>
+                    <span class="leaf-k">memory</span>
+                    <span class="leaf-v typewriter" data-field="assemble.memory" data-text="—"></span>
                   </div>
                   <div class="leaf">
-                    <span class="leaf-k">git</span>
-                    <span class="leaf-v typewriter" data-field="tools.git" data-text="—"></span>
-                  </div>
-                  <div class="leaf">
-                    <span class="leaf-k">search</span>
-                    <span class="leaf-v typewriter" data-field="tools.search" data-text="—"></span>
+                    <span class="leaf-k">request</span>
+                    <span class="leaf-v typewriter" data-field="assemble.request" data-text="—"></span>
                   </div>
                 </div>
               </div>
@@ -313,45 +326,13 @@
             <div class="tree-connector" aria-hidden="true"><span class="flow-packet" aria-hidden="true"></span></div>
           </div>
 
-          <!-- SYMBOLIC -->
-          <div class="tree-stage" data-stage="symbolic">
+          <!-- 7. PROVIDER -->
+          <div class="tree-stage" data-stage="provider">
             <div class="tree-row">
               <button type="button" class="tree-node" aria-expanded="false">
                 <span class="tree-pulse" aria-hidden="true"></span>
-                <span class="tree-label">Symbolic Engine</span>
-                <span class="tree-viz" data-viz="symbolic" aria-hidden="true"></span>
-              </button>
-              <div class="tree-branch" aria-hidden="true">
-                <svg class="tree-elbow" viewBox="0 0 48 40" aria-hidden="true" preserveAspectRatio="none">
-                  <path d="M0 20 H18 Q28 20 28 28 V40" />
-                  <path d="M28 20 H48" />
-                </svg>
-                <div class="tree-leaves">
-                  <div class="leaf">
-                    <span class="leaf-k">task</span>
-                    <span class="leaf-v typewriter" data-field="symbolic.task" data-text="—"></span>
-                  </div>
-                  <div class="leaf">
-                    <span class="leaf-k">engine</span>
-                    <span class="leaf-v typewriter" data-field="symbolic.engine" data-text="—"></span>
-                  </div>
-                  <div class="leaf">
-                    <span class="leaf-k">result</span>
-                    <span class="leaf-v typewriter" data-field="symbolic.result" data-text="—"></span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="tree-connector" aria-hidden="true"><span class="flow-packet" aria-hidden="true"></span></div>
-          </div>
-
-          <!-- AI -->
-          <div class="tree-stage" data-stage="ai">
-            <div class="tree-row">
-              <button type="button" class="tree-node" aria-expanded="false">
-                <span class="tree-pulse" aria-hidden="true"></span>
-                <span class="tree-label">Local / Remote AI</span>
-                <span class="tree-viz" data-viz="ai" aria-hidden="true"></span>
+                <span class="tree-label">Provider Routing</span>
+                <span class="tree-viz" data-viz="provider" aria-hidden="true"></span>
               </button>
               <div class="tree-branch" aria-hidden="true">
                 <svg class="tree-elbow" viewBox="0 0 48 40" aria-hidden="true" preserveAspectRatio="none">
@@ -361,15 +342,15 @@
                 <div class="tree-leaves">
                   <div class="leaf">
                     <span class="leaf-k">route</span>
-                    <span class="leaf-v typewriter" data-field="ai.route" data-text="—"></span>
+                    <span class="leaf-v typewriter" data-field="provider.route" data-text="—"></span>
                   </div>
                   <div class="leaf">
-                    <span class="leaf-k">local</span>
-                    <span class="leaf-v typewriter" data-field="ai.local" data-text="—"></span>
+                    <span class="leaf-k">handles</span>
+                    <span class="leaf-v typewriter" data-field="provider.handles" data-text="—"></span>
                   </div>
                   <div class="leaf">
-                    <span class="leaf-k">remote</span>
-                    <span class="leaf-v typewriter" data-field="ai.remote" data-text="—"></span>
+                    <span class="leaf-k">vs</span>
+                    <span class="leaf-v typewriter" data-field="provider.vs" data-text="—"></span>
                   </div>
                 </div>
               </div>
@@ -377,35 +358,83 @@
             <div class="tree-connector" aria-hidden="true"><span class="flow-packet" aria-hidden="true"></span></div>
           </div>
 
-          <!-- VERIFICATION -->
-          <div class="tree-stage" data-stage="verification">
+          <!-- 8. RUNTIME LOOP -->
+          <div class="tree-stage" data-stage="runtime">
             <div class="tree-row">
               <button type="button" class="tree-node" aria-expanded="false">
                 <span class="tree-pulse" aria-hidden="true"></span>
-                <span class="tree-label">Verification</span>
-                <span class="tree-viz" data-viz="verification" aria-hidden="true"></span>
+                <span class="tree-label">Runtime Loop</span>
+                <span class="tree-viz tree-viz--wide" data-viz="runtime" aria-hidden="true"></span>
               </button>
               <div class="tree-branch" aria-hidden="true">
                 <svg class="tree-elbow" viewBox="0 0 48 40" aria-hidden="true" preserveAspectRatio="none">
                   <path d="M0 20 H18 Q28 20 28 28 V40" />
                   <path d="M28 20 H48" />
                 </svg>
-                <div class="tree-leaves">
-                  <div class="leaf">
-                    <span class="leaf-k">tools</span>
-                    <span class="leaf-v typewriter" data-field="verification.tools" data-text="—"></span>
+                <div class="tree-leaves tree-leaves--memory">
+                  <div class="mem-branch" data-mem="stream">
+                    <button type="button" class="mem-node" aria-expanded="false">
+                      <span class="mem-dot"></span>
+                      Stream
+                    </button>
+                    <div class="mem-leaves" aria-hidden="true">
+                      <div class="leaf">
+                        <span class="leaf-k">deltas</span>
+                        <span class="leaf-v typewriter" data-field="runtime.stream.deltas" data-text="—"></span>
+                      </div>
+                      <div class="leaf">
+                        <span class="leaf-k">pause</span>
+                        <span class="leaf-v typewriter" data-field="runtime.stream.pause" data-text="—"></span>
+                      </div>
+                    </div>
                   </div>
-                  <div class="leaf">
-                    <span class="leaf-k">tests</span>
-                    <span class="leaf-v typewriter" data-field="verification.tests" data-text="—"></span>
+                  <div class="mem-branch" data-mem="tools">
+                    <button type="button" class="mem-node" aria-expanded="false">
+                      <span class="mem-dot"></span>
+                      Tool Harness
+                    </button>
+                    <div class="mem-leaves" aria-hidden="true">
+                      <div class="leaf">
+                        <span class="leaf-k">run</span>
+                        <span class="leaf-v typewriter" data-field="runtime.tools.run" data-text="—"></span>
+                      </div>
+                      <div class="leaf">
+                        <span class="leaf-k">return</span>
+                        <span class="leaf-v typewriter" data-field="runtime.tools.return" data-text="—"></span>
+                      </div>
+                    </div>
                   </div>
-                  <div class="leaf">
-                    <span class="leaf-k">evidence</span>
-                    <span class="leaf-v typewriter" data-field="verification.evidence" data-text="—"></span>
+                  <div class="mem-branch" data-mem="ctx">
+                    <button type="button" class="mem-node" aria-expanded="false">
+                      <span class="mem-dot"></span>
+                      .ctx_get / .mem_get
+                    </button>
+                    <div class="mem-leaves" aria-hidden="true">
+                      <div class="leaf">
+                        <span class="leaf-k">intercept</span>
+                        <span class="leaf-v typewriter" data-field="runtime.ctx.intercept" data-text="—"></span>
+                      </div>
+                      <div class="leaf">
+                        <span class="leaf-k">inject</span>
+                        <span class="leaf-v typewriter" data-field="runtime.ctx.inject" data-text="—"></span>
+                      </div>
+                    </div>
                   </div>
-                  <div class="leaf">
-                    <span class="leaf-k">confidence</span>
-                    <span class="leaf-v typewriter" data-field="verification.confidence" data-text="—"></span>
+                  <div class="mem-branch" data-mem="recover">
+                    <button type="button" class="mem-node" aria-expanded="false">
+                      <span class="mem-dot"></span>
+                      Limit recovery + latent
+                    </button>
+                    <div class="mem-leaves" aria-hidden="true">
+                      <div class="leaf">
+                        <span class="leaf-k">limit</span>
+                        <span class="leaf-v typewriter" data-field="runtime.recover.limit" data-text="—"></span>
+                      </div>
+                      <div class="leaf">
+                        <span class="leaf-k">latent</span>
+                        <span class="leaf-v typewriter" data-field="runtime.recover.latent" data-text="—"></span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -413,10 +442,10 @@
             <div class="tree-connector" aria-hidden="true"><span class="flow-packet" aria-hidden="true"></span></div>
           </div>
 
-          <!-- ANSWER -->
+          <!-- 9. ANSWER -->
           <div class="tree-stage" data-stage="answer">
             <div class="tree-row">
-              <button type="button" class="tree-node tree-node--end" aria-expanded="false">
+              <button type="button" class="tree-node" aria-expanded="false">
                 <span class="tree-pulse" aria-hidden="true"></span>
                 <span class="tree-label">Answer</span>
                 <span class="tree-viz" data-viz="answer" aria-hidden="true"></span>
@@ -429,11 +458,79 @@
                 <div class="tree-leaves">
                   <div class="leaf leaf--prompt">
                     <span class="leaf-k">response</span>
-                    <span
-                      class="leaf-v typewriter"
-                      data-field="answer.response"
-                      data-text="—"
-                    ></span>
+                    <span class="leaf-v typewriter" data-field="answer.response" data-text="—"></span>
+                  </div>
+                  <div class="leaf">
+                    <span class="leaf-k">save</span>
+                    <span class="leaf-v typewriter" data-field="answer.save" data-text="—"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="tree-connector" aria-hidden="true"><span class="flow-packet" aria-hidden="true"></span></div>
+          </div>
+
+          <!-- 10. AFTER TURN -->
+          <div class="tree-stage" data-stage="after">
+            <div class="tree-row">
+              <button type="button" class="tree-node tree-node--end" aria-expanded="false">
+                <span class="tree-pulse" aria-hidden="true"></span>
+                <span class="tree-label">After Turn</span>
+                <span class="tree-viz" data-viz="after" aria-hidden="true"></span>
+              </button>
+              <div class="tree-branch" aria-hidden="true">
+                <svg class="tree-elbow" viewBox="0 0 48 40" aria-hidden="true" preserveAspectRatio="none">
+                  <path d="M0 20 H18 Q28 20 28 28 V40" />
+                  <path d="M28 20 H48" />
+                </svg>
+                <div class="tree-leaves tree-leaves--memory">
+                  <div class="mem-branch" data-mem="persist">
+                    <button type="button" class="mem-node" aria-expanded="false">
+                      <span class="mem-dot"></span>
+                      Persist
+                    </button>
+                    <div class="mem-leaves" aria-hidden="true">
+                      <div class="leaf">
+                        <span class="leaf-k">write</span>
+                        <span class="leaf-v typewriter" data-field="after.persist.write" data-text="—"></span>
+                      </div>
+                      <div class="leaf">
+                        <span class="leaf-k">logs</span>
+                        <span class="leaf-v typewriter" data-field="after.persist.logs" data-text="—"></span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="mem-branch" data-mem="extract">
+                    <button type="button" class="mem-node" aria-expanded="false">
+                      <span class="mem-dot"></span>
+                      Memory extraction
+                    </button>
+                    <div class="mem-leaves" aria-hidden="true">
+                      <div class="leaf">
+                        <span class="leaf-k">sidecar</span>
+                        <span class="leaf-v typewriter" data-field="after.extract.sidecar" data-text="—"></span>
+                      </div>
+                      <div class="leaf">
+                        <span class="leaf-k">keep</span>
+                        <span class="leaf-v typewriter" data-field="after.extract.keep" data-text="—"></span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="mem-branch" data-mem="maintain">
+                    <button type="button" class="mem-node" aria-expanded="false">
+                      <span class="mem-dot"></span>
+                      Memory maintenance
+                    </button>
+                    <div class="mem-leaves" aria-hidden="true">
+                      <div class="leaf">
+                        <span class="leaf-k">garden</span>
+                        <span class="leaf-v typewriter" data-field="after.maintain.garden" data-text="—"></span>
+                      </div>
+                      <div class="leaf">
+                        <span class="leaf-k">next</span>
+                        <span class="leaf-v typewriter" data-field="after.maintain.next" data-text="—"></span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

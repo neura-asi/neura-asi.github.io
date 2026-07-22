@@ -249,7 +249,7 @@ body {
 
 /* —— Tree —— */
 .tree {
-  --node-w: 300px;
+  --node-w: 320px;
   position: relative;
   display: flex;
   flex-direction: column;

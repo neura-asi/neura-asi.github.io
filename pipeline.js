@@ -31,16 +31,25 @@
 
   const STAGE_ORDER = [
     "user",
-    "intent",
-    "planner",
+    "context",
     "memory",
-    "tools",
-    "symbolic",
-    "ai",
-    "verification",
+    "sidecar",
+    "diet",
+    "assemble",
+    "provider",
+    "runtime",
     "answer",
+    "after",
   ];
-  const MEM_ORDER = ["graph", "vault", "cache", "sidecar"];
+
+  const NESTED = {
+    memory: ["embed", "graph"],
+    diet: ["vault", "tokens"],
+    runtime: ["stream", "tools", "ctx", "recover"],
+    after: ["persist", "extract", "maintain"],
+  };
+
+  const SURFACES = ["TUI / desktop UI", "CLI / headless", "remote / mobile bridge", "dapp / widget bridge"];
 
   let simulating = false;
   let simToken = 0;
@@ -132,6 +141,23 @@
     });
   }
 
+  function keywords(text) {
+    const stop = {
+      a: 1, an: 1, the: 1, to: 1, and: 1, or: 1, for: 1, of: 1, in: 1, on: 1,
+      with: 1, keep: 1, dont: 1, be: 1, is: 1, are: 1, it: 1, this: 1,
+      that: 1, my: 1, me: 1, i: 1, please: 1, can: 1, you: 1, why: 1, how: 1,
+      only: 1, about: 1, from: 1, into: 1, under: 1, after: 1, without: 1,
+    };
+    return text
+      .toLowerCase()
+      .replace(/[^a-z0-9\s.+_-]/g, " ")
+      .split(/\s+/)
+      .filter(function (w) {
+        return w.length > 2 && !stop[w];
+      })
+      .slice(0, 8);
+  }
+
   function slugify(text) {
     return (
       text
@@ -146,110 +172,80 @@
     );
   }
 
-  function keywords(text) {
-    const stop = {
-      a: 1, an: 1, the: 1, to: 1, and: 1, or: 1, for: 1, of: 1, in: 1, on: 1,
-      with: 1, keep: 1, dont: 1, be: 1, is: 1, are: 1, it: 1, this: 1,
-      that: 1, my: 1, me: 1, i: 1, please: 1, can: 1, you: 1, why: 1, how: 1,
-      only: 1, about: 1, from: 1, into: 1, under: 1, after: 1,
-    };
-    return text
-      .toLowerCase()
-      .replace(/[^a-z0-9\s.+_-]/g, " ")
-      .split(/\s+/)
-      .filter(function (w) {
-        return w.length > 2 && !stop[w];
-      })
-      .slice(0, 8);
-  }
-
-  function guessFiles(keys, prompt) {
-    const files = [];
-    const p = prompt.toLowerCase();
-    if (/auth|login|session|cookie|api.?key/.test(p)) {
-      files.push("src/auth/middleware.ts", "src/cli/login.ts", "tests/auth.test.ts");
-    }
-    if (/ci|pipeline|ubuntu|github/.test(p)) {
-      files.push(".github/workflows/ci.yml", "scripts/ci.sh");
-    }
-    if (/dark.?mode|settings|ui|page|frontend|react|design.?token/.test(p)) {
-      files.push("src/ui/Settings.tsx", "src/styles/tokens.css");
-    }
-    if (/memory|embed|graph|vault|cache|sidecar/.test(p)) {
-      files.push("src/memory/graph.ts", "src/memory/vault.ts", "src/cache/store.ts");
-    }
-    if (/docker|image|mb/.test(p)) files.push("Dockerfile", "docker/sidecar.Dockerfile");
-    if (/migration|orm|column|sql|schema/.test(p)) {
-      files.push("db/migrations/002_api_key.sql", "src/db/models/user.ts");
-    }
-    if (/websocket|reconnect|flaky|test/.test(p)) {
-      files.push("tests/ws.reconnect.test.ts", "src/net/ws.ts");
-    }
-    if (/changelog|readme|adr|docs/.test(p)) files.push("CHANGELOG.md", "README.md", "docs/adr/");
-    if (/regex|date|symbolic|yaml|json.?schema/.test(p)) {
-      files.push("src/symbolic/dates.ts", "src/config/schema.json");
-    }
-    if (/race|verification|tool write/.test(p)) {
-      files.push("src/verify/runner.ts", "src/tools/fs.ts");
-    }
-    if (!files.length) {
-      const base = keys[0] || "app";
-      files.push("src/" + base + ".ts", "tests/" + base + ".test.ts");
-    }
-    return files.slice(0, 4).join(" · ");
-  }
-
   function buildSimulation(prompt) {
     const keys = keywords(prompt);
-    const intent = slugify(prompt);
-    const files = guessFiles(keys, prompt);
     const topic = keys.slice(0, 3).join(" ") || "request";
-    const conf = (0.82 + Math.min(keys.length, 6) * 0.02).toFixed(2);
-    const confOut = (0.9 + Math.random() * 0.07).toFixed(2);
-    const short = prompt.length > 72 ? prompt.slice(0, 69).trim() + "…" : prompt;
-    const ctxId = Math.random().toString(16).slice(2, 6);
-    const needsCode = /code|refactor|fix|implement|bug|test|auth|api|ui|build|docker|migration|patch|debug|optimize|script|dockerfile|schema|race/.test(
+    const short = prompt.length > 68 ? prompt.slice(0, 65).trim() + "…" : prompt;
+    const ctxId = Math.random().toString(16).slice(2, 8);
+    const surface = SURFACES[promptIndex % SURFACES.length];
+    const sid = "sess_" + Date.now().toString(36);
+    const needsTools = /fix|refactor|debug|test|migration|docker|search|patch|script|readme|schema|race|ci/.test(
       prompt.toLowerCase()
     );
+    const sidecarOn = promptIndex % 3 !== 2;
 
     return {
       "user.prompt": prompt,
-      "user.session": "session_" + Date.now().toString(36) + " · reasoning opened",
-      "intent.intent": intent,
-      "intent.files": files,
-      "intent.constraints": keys.slice(0, 4).join(" · ") || "complete request faithfully",
-      "intent.tools": needsCode ? "read · edit · test · git_diff · search" : "search · memory · summarize",
-      "intent.confidence": conf,
-      "planner.1": "read context for “" + topic + "”",
-      "planner.2": "search memory / cache for prior “" + (keys[0] || "work") + "”",
-      "planner.3": needsCode ? "run tools → apply changes" : "assemble retrieved context",
-      "planner.4": "generate response + verify",
-      "memory.graph.hit": "related memory: “" + topic + "” preferences / decisions",
-      "memory.graph.edges": "preference → project → “" + (keys[0] || "task") + "”",
-      "memory.graph.retrieve": "embed(“" + short + "”) → cascade nearby nodes",
-      "memory.vault.compress": 'prior turn → <ctx id="' + ctxId + '">',
-      "memory.vault.store": "exact text stored locally",
-      "memory.vault.restore": ".ctx_get(" + ctxId + ") → original on demand",
-      "memory.cache.lookup": "signature(“" + intent + "”) → miss",
-      "memory.cache.path": "execute normally → save result",
-      "memory.sidecar.note": "helper model — not the main AI",
-      "memory.sidecar.jobs": "extract · merge · summarize · verify · contradict",
-      "tools.files": "read/patch → " + files.split(" · ")[0],
-      "tools.shell": needsCode ? "test runner · lint touched files" : "skip heavy shell",
-      "tools.git": "diff staged changes for review",
-      "tools.search": "grep “" + (keys.slice(0, 2).join("|") || "topic") + "”",
-      "symbolic.task": "validate structured fields / formats in plan",
-      "symbolic.engine": "regex · dates · json/yaml — no LLM",
-      "symbolic.result": "verified deterministic ✓",
-      "ai.route": needsCode ? "hybrid — local draft, remote harden" : "local — fast path",
-      "ai.local": "outline approach for “" + topic + "”",
-      "ai.remote": needsCode ? "finalize implementation details" : "polish final wording",
-      "verification.tools": "✓ tool outputs match plan",
-      "verification.tests": needsCode ? "✓ checks passed" : "✓ consistency checks passed",
-      "verification.evidence": "✓ evidence ledger updated",
-      "verification.confidence": confOut + " → trusted",
+      "user.surface": surface,
+      "user.captures": "session · cwd · model · tools · UI state · recent chat",
+      "user.session": "~/.neura/sessions/" + sid,
+
+      "context.gather": "prompt · recent messages · system/dev instructions · cwd · model",
+      "context.tools": "tool schemas · recent tool outputs · background tasks",
+      "context.state": "project/global memories · ctx refs · latent/reflection · workspace meta",
+      "context.note": "model does not see the whole machine — curated pool only",
+
+      "memory.store": "~/.neura/memory/global.json · projects/*.json",
+      "memory.embed.query": "embed(“" + short + "”) via local MiniLM",
+      "memory.embed.hits": "nearest nodes for “" + topic + "”",
+      "memory.graph.edges": "supports · contradicts · depends_on · supersedes · similar_to",
+      "memory.graph.rank": "cascade related nodes → ranked memory candidates",
+
+      "sidecar.note": "optional helper — not the main reasoning model",
+      "sidecar.jobs": "relevance · extract · summarize · contradict · consolidate",
+      "sidecar.status": sidecarOn
+        ? "reachable · OpenAI-compatible / Ollama / local GGUF"
+        : "unavailable → embedding-only fallback",
+
+      "diet.vault.compress": 'bulky block → <ctx v=1 id="ctx:' + ctxId + '" s="…"/>',
+      "diet.vault.store": "~/.neura/ctx-vault/" + ctxId.slice(0, 2) + "/" + ctxId + ".json",
+      "diet.vault.rule": "do not invent hidden details — request .ctx_get if exact text needed",
+      "diet.tokens.tokenizer": "~/.neura/models/all-MiniLM-L6-v2/tokenizer.json",
+      "diet.tokens.uses": "compact threshold · memory packing · oversized-prompt guard · telemetry",
+
+      "assemble.layers": "system · developer/harness · tool rules · vault decoder · recent msgs",
+      "assemble.memory": "injected anchors / .mem_get pointers (not always full dumps)",
+      "assemble.request": "current user request + tool schemas → final message list",
+
+      "provider.route": needsTools ? "remote OpenAI-compatible · streaming on" : "local endpoint · streaming on",
+      "provider.handles": "auth · JSON shape · stream parse · failover · context-limit errors",
+      "provider.vs": "sidecar prepares/supports · provider model generates answer/tool calls",
+
+      "runtime.stream.deltas": "text · reasoning · tool calls · stop · usage/compaction meta",
+      "runtime.stream.pause": needsTools ? "tool call detected → pause completion" : "stream toward final answer",
+      "runtime.tools.run": needsTools
+        ? "harness runs shell/files/grep/patch/browser/MCP — not the model"
+        : "no tool call this turn",
+      "runtime.tools.return": needsTools
+        ? "normalize · maybe compact → append → model continues"
+        : "skip tool round-trip",
+      "runtime.ctx.intercept": ".ctx_get id=ctx:" + ctxId + " / .ctx_search / .mem_get",
+      "runtime.ctx.inject": "load exact text from vault or stash → system reminder → continue",
+      "runtime.recover.limit": "provider too-large → compact older msgs → retry",
+      "runtime.recover.latent": "reflection priors filtered — tools still win over observer claims",
+
       "answer.response":
-        "Done. For “" + short + "” Neura planned, retrieved memory, used tools where needed, verified the result, and is ready for the next turn.",
+        "Final assistant response for “" + short + "” — no pending tools, ctx_get, or recovery.",
+      "answer.save": "assistant message written into session " + sid,
+
+      "after.persist.write": "messages · tools · compression stats · retrieval diagnostics",
+      "after.persist.logs": "~/.neura/logs · interlang-stats.jsonl · live_operational_fabric/",
+      "after.extract.sidecar": sidecarOn
+        ? "sidecar extracts durable prefs/facts/workflows/decisions as JSON"
+        : "skip extract — sidecar offline",
+      "after.extract.keep": "write durable nodes into project memory graph",
+      "after.maintain.garden": "link · decay · prune · consolidate · contradict · re-embed · cluster",
+      "after.maintain.next": "local state ready — next prompt reuses memory/vault/telemetry",
     };
   }
 
@@ -315,7 +311,7 @@
       void packet.offsetWidth;
       packet.classList.add("is-travel");
     }
-    await wait(360);
+    await wait(340);
     connector.classList.remove("is-flowing");
   }
 
@@ -329,75 +325,75 @@
         const speed = text.length > 70 ? 5 : text.length > 35 ? 7 : 9;
         await typewriter(el, text, speed);
       }
-      await wait(30);
+      await wait(28);
+    }
+  }
+
+  async function runNested(stage, stageName, map) {
+    const order = NESTED[stageName] || [];
+    for (let i = 0; i < order.length; i++) {
+      if (!simulating) return;
+      const mem = stage.querySelector('.mem-branch[data-mem="' + order[i] + '"]');
+      if (!mem) continue;
+      stage.querySelectorAll(".mem-branch.is-active").forEach(function (other) {
+        if (other !== mem) {
+          other.classList.remove("is-active");
+          other.classList.add("is-open", "is-done");
+        }
+      });
+      openMem(mem);
+      const keys = Object.keys(map).filter(function (k) {
+        if (stageName === "memory") return k.indexOf("memory." + order[i] + ".") === 0;
+        if (stageName === "diet") return k.indexOf("diet." + order[i] + ".") === 0;
+        if (stageName === "runtime") return k.indexOf("runtime." + order[i] + ".") === 0;
+        if (stageName === "after") return k.indexOf("after." + order[i] + ".") === 0;
+        return false;
+      });
+      setBar(stageName + " · " + order[i], "is-run");
+      await typeNamed(map, keys);
+      mem.classList.remove("is-active");
+      mem.classList.add("is-open", "is-done");
+      await wait(40);
     }
   }
 
   async function runStage(name, map) {
     const stage = stageEl(name);
     if (!stage) return;
-
     activateStage(stage);
-    await wait(90);
+    await wait(80);
 
     if (name === "user") {
-      setBar("User · receiving prompt", "is-run");
-      await typeNamed(map, ["user.prompt", "user.session"]);
-    } else if (name === "intent") {
-      setBar("Intent Parser · structuring request", "is-run");
-      await typeNamed(map, [
-        "intent.intent",
-        "intent.files",
-        "intent.constraints",
-        "intent.tools",
-        "intent.confidence",
-      ]);
-    } else if (name === "planner") {
-      setBar("Planner · building execution plan", "is-run");
-      await typeNamed(map, ["planner.1", "planner.2", "planner.3", "planner.4"]);
+      setBar("User · surface captures the turn", "is-run");
+      await typeNamed(map, ["user.prompt", "user.surface", "user.captures", "user.session"]);
+    } else if (name === "context") {
+      setBar("Context Pool · curating candidates", "is-run");
+      await typeNamed(map, ["context.gather", "context.tools", "context.state", "context.note"]);
     } else if (name === "memory") {
-      setBar("Memory System · retrieving reusable work", "is-run");
-      for (let i = 0; i < MEM_ORDER.length; i++) {
-        if (!simulating) return;
-        const mem = stage.querySelector('.mem-branch[data-mem="' + MEM_ORDER[i] + '"]');
-        if (!mem) continue;
-        stage.querySelectorAll(".mem-branch.is-active").forEach(function (other) {
-          if (other !== mem) {
-            other.classList.remove("is-active");
-            other.classList.add("is-open", "is-done");
-          }
-        });
-        openMem(mem);
-        const prefix = "memory." + MEM_ORDER[i] + ".";
-        const names = Object.keys(map).filter(function (k) {
-          return k.indexOf(prefix) === 0;
-        });
-        setBar("Memory · " + MEM_ORDER[i], "is-run");
-        await typeNamed(map, names);
-        mem.classList.remove("is-active");
-        mem.classList.add("is-open", "is-done");
-        await wait(50);
-      }
-    } else if (name === "tools") {
-      setBar("Tools · performing real work", "is-run");
-      await typeNamed(map, ["tools.files", "tools.shell", "tools.git", "tools.search"]);
-    } else if (name === "symbolic") {
-      setBar("Symbolic Engine · deterministic path", "is-run");
-      await typeNamed(map, ["symbolic.task", "symbolic.engine", "symbolic.result"]);
-    } else if (name === "ai") {
-      setBar("Local / Remote AI · routing & generating", "is-run");
-      await typeNamed(map, ["ai.route", "ai.local", "ai.remote"]);
-    } else if (name === "verification") {
-      setBar("Verification · checking evidence", "is-run");
-      await typeNamed(map, [
-        "verification.tools",
-        "verification.tests",
-        "verification.evidence",
-        "verification.confidence",
-      ]);
+      setBar("Memory Lookup · graph + embeddings", "is-run");
+      await typeNamed(map, ["memory.store"]);
+      await runNested(stage, "memory", map);
+    } else if (name === "sidecar") {
+      setBar("Sidecar · optional helper pass", "is-run");
+      await typeNamed(map, ["sidecar.note", "sidecar.jobs", "sidecar.status"]);
+    } else if (name === "diet") {
+      setBar("Context Diet · vault + token budget", "is-run");
+      await runNested(stage, "diet", map);
+    } else if (name === "assemble") {
+      setBar("Assemble Prompt · final message list", "is-run");
+      await typeNamed(map, ["assemble.layers", "assemble.memory", "assemble.request"]);
+    } else if (name === "provider") {
+      setBar("Provider Routing · main model path", "is-run");
+      await typeNamed(map, ["provider.route", "provider.handles", "provider.vs"]);
+    } else if (name === "runtime") {
+      setBar("Runtime Loop · stream / tools / recover", "is-run");
+      await runNested(stage, "runtime", map);
     } else if (name === "answer") {
-      setBar("Answer · returning verified response", "is-run");
-      await typeNamed(map, ["answer.response"]);
+      setBar("Answer · finalize to user", "is-run");
+      await typeNamed(map, ["answer.response", "answer.save"]);
+    } else if (name === "after") {
+      setBar("After Turn · persist / extract / garden", "is-run");
+      await runNested(stage, "after", map);
     }
 
     completeStage(stage);
@@ -428,7 +424,7 @@
       if (!simulating) return;
       if (i > 0) await pulseConnector(stageEl(STAGE_ORDER[i - 1]));
       await runStage(STAGE_ORDER[i], map);
-      await wait(60);
+      await wait(50);
     }
 
     if (!simulating) return;
@@ -440,7 +436,7 @@
     promptIndex = (promptIndex + 1) % PROMPTS.length;
     loopTimer = window.setTimeout(function () {
       runSimulation(PROMPTS[promptIndex]);
-    }, 1800);
+    }, 2000);
   }
 
   function openStageManual(stage) {
@@ -470,7 +466,6 @@
       else openMem(mem);
       return;
     }
-
     const nodeBtn = event.target.closest(".tree-node");
     if (nodeBtn && pipeline.contains(nodeBtn)) {
       if (simulating) return;
@@ -480,12 +475,11 @@
     }
   });
 
-  // Auto-start demo loop
   const boot = stageEl("user");
   if (boot) activateStage(boot);
   showPrompt(PROMPTS[0]);
-  setBar("Starting live demo…", "is-run");
+  setBar("Starting live Neura turn-loop demo…", "is-run");
   window.setTimeout(function () {
     runSimulation(PROMPTS[0]);
-  }, 600);
+  }, 500);
 })();
