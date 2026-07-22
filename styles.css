@@ -223,11 +223,20 @@ body {
 }
 
 .sim-bar__dot {
+  position: relative;
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: var(--muted);
   flex-shrink: 0;
+}
+
+.sim-bar__dot::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
 }
 
 .sim-bar.is-run {
@@ -237,7 +246,12 @@ body {
 .sim-bar.is-run .sim-bar__dot {
   background: var(--how-bg);
   box-shadow: 0 0 10px var(--glow);
-  animation: pulse-ring 1.6s ease-out infinite;
+  animation: pulse-core 1.6s ease-in-out infinite;
+}
+
+.sim-bar.is-run .sim-bar__dot::after {
+  border-color: var(--how-bg);
+  animation: pulse-ring 1.8s ease-out infinite;
 }
 
 .sim-bar.is-done {
@@ -371,6 +385,7 @@ body.is-paused .playback {
   margin: 0;
   padding: 14px 14px 14px 28px;
   border: none;
+  border-radius: 12px;
   background: transparent;
   color: var(--fg);
   font-family: "Chakra Petch", sans-serif;
@@ -380,11 +395,31 @@ body.is-paused .playback {
   text-align: left;
   cursor: pointer;
   --viz-scale: 1;
-  transition: color 0.2s ease;
+  transition:
+    color 0.25s ease,
+    background-color 0.35s ease,
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tree-node::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 14px;
+  width: 2px;
+  border-radius: 2px;
+  background: linear-gradient(to bottom, var(--how-bg), transparent);
+  opacity: 0;
+  transform: scaleY(0.3);
+  transform-origin: top;
+  transition: opacity 0.3s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .tree-node:hover {
   color: var(--leaf-k);
+  background: color-mix(in srgb, var(--how-bg) 6%, transparent);
+  transform: translateX(2px);
   --viz-scale: 0.55;
 }
 
@@ -395,6 +430,23 @@ body.is-paused .playback {
 
 .tree-stage.is-active > .tree-row > .tree-node {
   --viz-scale: 0.48;
+  background: color-mix(in srgb, var(--how-bg) 8%, transparent);
+}
+
+.tree-stage.is-active > .tree-row > .tree-node::before {
+  opacity: 1;
+  transform: scaleY(1);
+  animation: node-bar-glow 1.8s ease-in-out infinite;
+}
+
+@keyframes node-bar-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 8px var(--glow);
+  }
+  50% {
+    box-shadow: 0 0 16px var(--glow);
+  }
 }
 
 .tree-stage.is-done > .tree-row > .tree-node {
@@ -402,8 +454,14 @@ body.is-paused .playback {
   --viz-scale: 1.12;
 }
 
+.tree-stage.is-done > .tree-row > .tree-node::before {
+  opacity: 0.65;
+  transform: scaleY(1);
+  background: linear-gradient(to bottom, var(--ok), transparent);
+}
+
 .tree-stage.is-active {
-  animation: stage-glow 1.8s ease-in-out infinite;
+  animation: stage-glow 2.4s ease-in-out infinite;
 }
 
 @keyframes stage-glow {
@@ -412,7 +470,7 @@ body.is-paused .playback {
     filter: none;
   }
   50% {
-    filter: drop-shadow(0 0 12px color-mix(in srgb, var(--how-bg) 25%, transparent));
+    filter: drop-shadow(0 0 16px color-mix(in srgb, var(--how-bg) 28%, transparent));
   }
 }
 
@@ -422,55 +480,113 @@ body.is-paused .playback {
 
 .tree-pulse {
   position: absolute;
-  left: 4px;
+  left: 3px;
   top: 20px;
   width: 12px;
   height: 12px;
   border-radius: 50%;
   background: var(--muted);
   box-shadow: 0 0 0 0 transparent;
-  transition: background 0.25s ease, box-shadow 0.25s ease;
+  transition: background 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.tree-pulse::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  transition: border-color 0.3s ease;
 }
 
 .tree-stage.is-open > .tree-row > .tree-node .tree-pulse,
 .tree-stage.is-active > .tree-row > .tree-node .tree-pulse {
   background: var(--how-bg);
   box-shadow: 0 0 14px var(--glow);
-  animation: pulse-ring 2.4s ease-out infinite;
+}
+
+.tree-stage.is-active > .tree-row > .tree-node .tree-pulse {
+  animation: pulse-core 1.6s ease-in-out infinite;
+}
+
+.tree-stage.is-active > .tree-row > .tree-node .tree-pulse::after {
+  border-color: var(--how-bg);
+  animation: pulse-ring 1.8s ease-out infinite;
 }
 
 .tree-stage.is-done > .tree-row > .tree-node .tree-pulse {
   background: var(--ok);
   box-shadow: 0 0 10px color-mix(in srgb, var(--ok) 50%, transparent);
-  animation: none;
+  animation: pulse-settle 0.5s ease;
 }
 
 .tree-node--end .tree-pulse {
   background: var(--how-bg);
 }
 
-@keyframes pulse-ring {
-  0% {
-    box-shadow: 0 0 0 0 var(--glow);
+@keyframes pulse-core {
+  0%,
+  100% {
+    transform: scale(1);
   }
-  70% {
-    box-shadow: 0 0 0 12px transparent;
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+@keyframes pulse-settle {
+  0% {
+    transform: scale(1.4);
+  }
+  60% {
+    transform: scale(0.85);
   }
   100% {
-    box-shadow: 0 0 0 0 transparent;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
   }
 }
 
 .tree-label {
   line-height: 1.2;
+  transition: transform 0.3s ease;
+}
+
+.tree-stage.is-active > .tree-row > .tree-node .tree-label {
+  transform: translateX(2px);
 }
 
 .tree-connector {
   margin-left: 9px;
   width: 2px;
   height: 36px;
-  background: linear-gradient(to bottom, var(--spine), transparent);
+  background: linear-gradient(to bottom, var(--spine), var(--spine) 40%, transparent);
   position: relative;
+  transition: background 0.3s ease;
+}
+
+.tree-connector::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    var(--how-bg),
+    color-mix(in srgb, var(--how-bg) 40%, transparent) 60%,
+    transparent
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .tree-connector::after {
@@ -484,41 +600,58 @@ body.is-paused .playback {
   border-bottom: 1.5px solid var(--spine);
   transform: translateX(-50%) rotate(45deg);
   opacity: 0.7;
+  transition: border-color 0.3s ease;
 }
 
-.tree-connector.is-flowing {
-  background: linear-gradient(to bottom, var(--how-bg), transparent);
+.tree-connector.is-flowing::before {
+  opacity: 1;
+}
+
+.tree-connector.is-flowing::after {
+  border-right-color: var(--how-bg);
+  border-bottom-color: var(--how-bg);
+  opacity: 1;
 }
 
 .flow-packet {
   position: absolute;
   left: 50%;
   top: 0;
-  width: 8px;
-  height: 8px;
-  margin-left: -4px;
+  width: 9px;
+  height: 9px;
+  margin-left: -4.5px;
   border-radius: 50%;
   background: var(--viz-packet);
-  box-shadow: 0 0 10px var(--glow);
+  box-shadow:
+    0 0 12px var(--glow),
+    0 0 4px color-mix(in srgb, var(--viz-packet) 90%, #fff);
   opacity: 0;
   pointer-events: none;
+  z-index: 3;
 }
 
 .flow-packet.is-travel {
-  animation: flow-down 0.5s ease-in forwards;
+  animation: flow-down 0.55s cubic-bezier(0.5, 0, 0.6, 1) forwards;
 }
 
 @keyframes flow-down {
   0% {
-    top: 0;
+    top: -4px;
     opacity: 0;
+    transform: scale(0.6);
   }
-  15% {
+  20% {
     opacity: 1;
+    transform: scale(1.15);
+  }
+  85% {
+    opacity: 1;
+    transform: scale(1);
   }
   100% {
-    top: calc(100% - 8px);
-    opacity: 0.2;
+    top: calc(100% - 6px);
+    opacity: 0;
+    transform: scale(0.5);
   }
 }
 
@@ -608,8 +741,16 @@ body.is-paused .playback {
 .tree-stage.is-open > .tree-row > .tree-branch .tree-elbow path,
 .tree-stage.is-active > .tree-row > .tree-branch .tree-elbow path,
 .tree-stage.is-done > .tree-row > .tree-branch .tree-elbow path {
-  animation: draw-elbow 0.55s ease forwards;
+  animation: draw-elbow 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   stroke: var(--how-bg);
+}
+
+.tree-stage.is-active > .tree-row > .tree-branch .tree-elbow path {
+  filter: drop-shadow(0 0 4px var(--glow));
+}
+
+.tree-stage.is-done > .tree-row > .tree-branch .tree-elbow path {
+  stroke: color-mix(in srgb, var(--ok) 70%, var(--how-bg));
 }
 
 @keyframes draw-elbow {
@@ -632,15 +773,21 @@ body.is-paused .playback {
   left: 0;
   top: 18px;
   bottom: 18px;
-  width: 1px;
-  background: linear-gradient(to bottom, var(--how-bg), transparent);
+  width: 1.5px;
+  border-radius: 2px;
+  background: linear-gradient(to bottom, var(--how-bg), color-mix(in srgb, var(--how-bg) 30%, transparent), transparent);
   opacity: 0;
-  transition: opacity 0.3s ease 0.15s;
+  transform: scaleY(0);
+  transform-origin: top;
+  transition:
+    opacity 0.3s ease 0.1s,
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s;
 }
 
 .tree-stage.is-open > .tree-row > .tree-branch .tree-leaves::before,
 .tree-stage.is-active > .tree-row > .tree-branch .tree-leaves::before {
-  opacity: 0.55;
+  opacity: 0.6;
+  transform: scaleY(1);
 }
 
 .leaf {
@@ -651,13 +798,14 @@ body.is-paused .playback {
   padding-left: 14px;
   position: relative;
   opacity: 0;
-  transform: translateX(-8px);
+  transform: translateX(-10px);
+  filter: blur(2px);
 }
 
 .tree-stage.is-open > .tree-row > .tree-branch .leaf,
 .tree-stage.is-active > .tree-row > .tree-branch .leaf,
 .tree-stage.is-done > .tree-row > .tree-branch .leaf {
-  animation: leaf-in 0.4s ease forwards;
+  animation: leaf-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   opacity: 1;
   transform: none;
 }
@@ -684,9 +832,18 @@ body.is-paused .playback {
 }
 
 @keyframes leaf-in {
-  to {
+  0% {
+    opacity: 0;
+    transform: translateX(-10px);
+    filter: blur(2px);
+  }
+  60% {
+    filter: blur(0);
+  }
+  100% {
     opacity: 1;
     transform: translateX(0);
+    filter: blur(0);
   }
 }
 
@@ -696,9 +853,21 @@ body.is-paused .playback {
   left: 0;
   top: 0.7em;
   width: 10px;
-  height: 1px;
+  height: 1.5px;
+  border-radius: 2px;
   background: var(--how-bg);
   opacity: 0.7;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s ease 0.1s;
+}
+
+.tree-stage.is-open > .tree-row > .tree-branch .leaf::before,
+.tree-stage.is-active > .tree-row > .tree-branch .leaf::before,
+.tree-stage.is-done > .tree-row > .tree-branch .leaf::before,
+.mem-branch.is-open > .mem-leaves .leaf::before,
+.mem-branch.is-done > .mem-leaves .leaf::before {
+  transform: scaleX(1);
 }
 
 .leaf-k {
@@ -799,13 +968,23 @@ body.is-paused .playback {
 }
 
 .mem-dot {
+  position: relative;
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background: var(--muted);
   box-shadow: 0 0 0 0 transparent;
-  transition: background 0.2s ease, box-shadow 0.2s ease;
+  transition: background 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
   flex-shrink: 0;
+}
+
+.mem-dot::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  transition: border-color 0.25s ease;
 }
 
 .mem-branch.is-open > .mem-node,
@@ -823,9 +1002,19 @@ body.is-paused .playback {
   box-shadow: 0 0 8px var(--glow);
 }
 
+.mem-branch.is-active > .mem-node .mem-dot {
+  animation: pulse-core 1.5s ease-in-out infinite;
+}
+
+.mem-branch.is-active > .mem-node .mem-dot::after {
+  border-color: var(--how-bg);
+  animation: pulse-ring 1.7s ease-out infinite;
+}
+
 .mem-branch.is-done > .mem-node .mem-dot {
   background: var(--ok);
   box-shadow: none;
+  animation: pulse-settle 0.45s ease;
 }
 
 .mem-leaves {
@@ -853,19 +1042,22 @@ body.is-paused .playback {
 
 .mem-branch.is-open > .mem-leaves .leaf,
 .mem-branch.is-done > .mem-leaves .leaf {
-  animation: leaf-in 0.35s ease forwards;
+  animation: leaf-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   opacity: 1;
   transform: none;
 }
 
-.mem-branch.is-open > .mem-leaves .leaf:nth-child(1) {
+.mem-branch.is-open > .mem-leaves .leaf:nth-child(1),
+.mem-branch.is-done > .mem-leaves .leaf:nth-child(1) {
   animation-delay: 0.05s;
 }
-.mem-branch.is-open > .mem-leaves .leaf:nth-child(2) {
-  animation-delay: 0.12s;
+.mem-branch.is-open > .mem-leaves .leaf:nth-child(2),
+.mem-branch.is-done > .mem-leaves .leaf:nth-child(2) {
+  animation-delay: 0.13s;
 }
-.mem-branch.is-open > .mem-leaves .leaf:nth-child(3) {
-  animation-delay: 0.2s;
+.mem-branch.is-open > .mem-leaves .leaf:nth-child(3),
+.mem-branch.is-done > .mem-leaves .leaf:nth-child(3) {
+  animation-delay: 0.21s;
 }
 
 /* —— Reveal flash for instant fields —— */
@@ -1515,15 +1707,43 @@ body.is-paused .playback {
   .tree-branch,
   .mem-leaves,
   .leaf,
+  .leaf::before,
   .tree-elbow path,
+  .tree-node,
+  .tree-node::before,
+  .tree-pulse,
+  .tree-pulse::after,
+  .mem-dot,
+  .mem-dot::after,
+  .tree-leaves::before,
+  .flow-packet,
+  .tree-stage.is-active,
   .tree-viz * {
     animation: none !important;
     transition: none !important;
   }
 
+  .leaf {
+    filter: none !important;
+  }
+
   .tree-stage.is-open > .tree-row > .tree-branch .leaf,
-  .mem-branch.is-open > .mem-leaves .leaf {
+  .tree-stage.is-active > .tree-row > .tree-branch .leaf,
+  .tree-stage.is-done > .tree-row > .tree-branch .leaf,
+  .mem-branch.is-open > .mem-leaves .leaf,
+  .mem-branch.is-done > .mem-leaves .leaf {
     opacity: 1;
     transform: none;
+    filter: none;
+  }
+
+  .tree-stage.is-open > .tree-row > .tree-branch .leaf::before,
+  .tree-stage.is-active > .tree-row > .tree-branch .leaf::before,
+  .tree-stage.is-done > .tree-row > .tree-branch .leaf::before {
+    transform: scaleX(1);
+  }
+
+  .tree-leaves::before {
+    transform: scaleY(1);
   }
 }
