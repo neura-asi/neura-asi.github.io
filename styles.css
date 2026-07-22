@@ -1,0 +1,192 @@
+@font-face {
+  font-family: "Nasalization";
+  src: url("fonts/Nasalization-Rg.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #000000;
+  --fg: #ffffff;
+  --muted: #737373;
+  --border: #262626;
+  --surface: #0a0a0a;
+  --toggle-fg: #ffffff;
+  --how-bg: #1a6cff;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f4f4f5;
+  --fg: #0a0a0a;
+  --muted: #737373;
+  --border: #d4d4d8;
+  --surface: #ffffff;
+  --toggle-fg: #0a0a0a;
+  --how-bg: #1a6cff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  color: var(--fg);
+  background: var(--bg);
+}
+
+body {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  min-height: 100vh;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar__left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+/* Exact Neura web UI brand title style */
+.brand {
+  margin: 0;
+  font-family: "Nasalization", ui-monospace, monospace;
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  background: linear-gradient(
+    100deg,
+    #ff3b7a 0%,
+    #ff8a00 16%,
+    #ffe600 32%,
+    #00e676 48%,
+    #00b0ff 64%,
+    #7c4dff 80%,
+    #ff3b7a 100%
+  );
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: brand-color-flow 9s linear infinite;
+}
+
+@keyframes brand-color-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 300% 50%;
+  }
+}
+
+.how-it-works {
+  display: inline-flex;
+  align-items: center;
+  font-family: "Chakra Petch", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  color: #ffffff;
+  background: var(--how-bg);
+  padding: 6px 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.how-it-works:hover {
+  filter: brightness(1.08);
+}
+
+.how-it-works:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 3px;
+}
+
+.theme-toggle {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--toggle-fg);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.theme-toggle:hover {
+  background: var(--surface);
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 3px;
+}
+
+.theme-icon {
+  width: 20px;
+  height: 20px;
+  display: none;
+}
+
+[data-theme="dark"] .theme-icon--sun {
+  display: block;
+}
+
+[data-theme="light"] .theme-icon--moon {
+  display: block;
+}
+
+.section {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 48px 24px;
+}
+
+.section__title {
+  margin: 0 0 12px;
+  font-family: "Chakra Petch", sans-serif;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.section__body {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+@media (max-width: 520px) {
+  .topbar {
+    padding: 16px;
+  }
+
+  .brand {
+    font-size: 18px;
+  }
+}
