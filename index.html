@@ -61,12 +61,28 @@
         </p>
         <p class="section__hint">Type a prompt and hit Send — watch Neura simulate the full inference path in real time. You can also click any stage.</p>
 
-        <div class="tree" id="pipeline" aria-label="Interactive inference tree">
-          <div class="sim-bar" id="sim-bar" aria-live="polite">
+        <div class="sim-bar" id="sim-bar" aria-live="polite">
             <span class="sim-bar__dot" aria-hidden="true"></span>
             <span class="sim-bar__text" id="sim-bar-text">Ready — enter a prompt to run a full inference simulation.</span>
           </div>
 
+          <form class="composer" id="prompt-form">
+            <label class="composer__label" for="prompt-input">Your prompt</label>
+            <textarea
+              id="prompt-input"
+              class="composer__input"
+              rows="4"
+              maxlength="500"
+              placeholder="Ask Neura to do something…"
+            >Refactor auth middleware to support API keys + session cookies. Keep existing tests green and don't break the CLI login flow.</textarea>
+            <div class="composer__actions">
+              <button type="submit" class="composer__send" id="prompt-send">Send</button>
+              <button type="button" class="composer__stop" id="prompt-stop" hidden>Stop</button>
+              <span class="composer__hint">Enter to send · Shift+Enter for newline</span>
+            </div>
+          </form>
+
+          <div class="tree" id="pipeline" aria-label="Interactive inference tree">
           <!-- USER -->
           <div class="tree-stage is-open" data-stage="user">
             <div class="tree-row">
@@ -81,21 +97,9 @@
                   <path d="M28 20 H48" />
                 </svg>
                 <div class="tree-leaves">
-                  <div class="leaf leaf--composer">
-                    <form class="composer" id="prompt-form">
-                      <label class="composer__label" for="prompt-input">prompt</label>
-                      <textarea
-                        id="prompt-input"
-                        class="composer__input"
-                        rows="3"
-                        maxlength="500"
-                        placeholder="Ask Neura to do something…"
-                      >Refactor auth middleware to support API keys + session cookies. Keep existing tests green and don't break the CLI login flow.</textarea>
-                      <div class="composer__actions">
-                        <button type="submit" class="composer__send" id="prompt-send">Send</button>
-                        <button type="button" class="composer__stop" id="prompt-stop" hidden>Stop</button>
-                      </div>
-                    </form>
+                  <div class="leaf leaf--prompt">
+                    <span class="leaf-k">prompt</span>
+                    <span class="leaf-v typewriter" data-field="user.prompt" data-text="awaiting prompt…"></span>
                   </div>
                   <div class="leaf">
                     <span class="leaf-k">session</span>

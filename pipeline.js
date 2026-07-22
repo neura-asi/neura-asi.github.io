@@ -20,7 +20,6 @@
     "verification",
     "answer",
   ];
-
   const MEM_ORDER = ["graph", "vault", "cache", "sidecar"];
 
   let simulating = false;
@@ -44,9 +43,7 @@
   }
 
   function clearPending() {
-    while (pendingTimeouts.length) {
-      window.clearTimeout(pendingTimeouts.pop());
-    }
+    while (pendingTimeouts.length) window.clearTimeout(pendingTimeouts.pop());
   }
 
   function clearTypewriter(el) {
@@ -70,10 +67,12 @@
           resolve();
           return;
         }
-        i += 1;
+        // Type 2–3 chars at a time for smoother motion
+        const chunk = text.length > 80 ? 3 : text.length > 40 ? 2 : 1;
+        i = Math.min(text.length, i + chunk);
         el.textContent = text.slice(0, i);
         if (i < text.length) {
-          const id = window.setTimeout(step, speed + Math.random() * 12);
+          const id = window.setTimeout(step, speed + Math.random() * 8);
           typeTimers.set(el, id);
           pendingTimeouts.push(id);
         } else {
@@ -82,7 +81,7 @@
           resolve();
         }
       };
-      const id = window.setTimeout(step, 20);
+      const id = window.setTimeout(step, 16);
       typeTimers.set(el, id);
       pendingTimeouts.push(id);
     });
@@ -109,15 +108,17 @@
   }
 
   function slugify(text) {
-    return text
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, " ")
-      .trim()
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 5)
-      .join("_")
-      .slice(0, 48) || "general_request";
+    return (
+      text
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, " ")
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 5)
+        .join("_")
+        .slice(0, 48) || "general_request"
+    );
   }
 
   function keywords(text) {
@@ -163,11 +164,12 @@
     const confOut = (0.9 + Math.random() * 0.07).toFixed(2);
     const short = prompt.length > 72 ? prompt.slice(0, 69).trim() + "…" : prompt;
     const ctxId = Math.random().toString(16).slice(2, 6);
-
-    const needsCode = /code|refactor|fix|implement|bug|test|auth|api|ui|build/.test(prompt.toLowerCase());
-    const route = needsCode ? "hybrid — local draft, remote harden" : "local — fast path";
+    const needsCode = /code|refactor|fix|implement|bug|test|auth|api|ui|build/.test(
+      prompt.toLowerCase()
+    );
 
     return {
+      "user.prompt": prompt,
       "user.session": "session_" + Date.now().toString(36) + " · reasoning opened",
       "intent.intent": intent,
       "intent.files": files,
@@ -195,7 +197,7 @@
       "symbolic.task": "validate structured fields / formats in plan",
       "symbolic.engine": "regex · dates · json/yaml — no LLM",
       "symbolic.result": "verified deterministic ✓",
-      "ai.route": route,
+      "ai.route": needsCode ? "hybrid — local draft, remote harden" : "local — fast path",
       "ai.local": "outline approach for “" + topic + "”",
       "ai.remote": needsCode ? "finalize implementation details" : "polish final wording",
       "verification.tools": "✓ tool outputs match plan",
@@ -217,21 +219,42 @@
 
   function openMem(mem) {
     mem.classList.add("is-open", "is-active");
+    mem.classList.remove("is-done");
     const btn = mem.querySelector(":scope > .mem-node");
     const leaves = mem.querySelector(":scope > .mem-leaves");
     if (btn) btn.setAttribute("aria-expanded", "true");
     if (leaves) leaves.setAttribute("aria-hidden", "false");
   }
 
-  function setStageState(stage, state) {
-    stage.classList.remove("is-open", "is-active", "is-done", "is-flow");
-    if (state) stage.classList.add(state);
+  function keepBranchOpen(stage) {
     const btn = stage.querySelector(".tree-node");
     const branch = stage.querySelector(".tree-branch");
-    const open = state === "is-open" || state === "is-active";
-    if (btn) btn.setAttribute("aria-expanded", open ? "true" : "false");
-    if (branch) branch.setAttribute("aria-hidden", open ? "false" : "true");
-    if (!open) stage.querySelectorAll(".mem-branch.is-open").forEach(closeMem);
+    if (btn) btn.setAttribute("aria-expanded", "true");
+    if (branch) branch.setAttribute("aria-hidden", "false");
+  }
+
+  function activateStage(stage) {
+    stage.classList.add("is-open", "is-active");
+    stage.classList.remove("is-done");
+    keepBranchOpen(stage);
+  }
+
+  function completeStage(stage) {
+    stage.classList.remove("is-active");
+    stage.classList.add("is-open", "is-done");
+    keepBranchOpen(stage);
+  }
+
+  function resetStage(stage) {
+    stage.classList.remove("is-open", "is-active", "is-done", "is-flow");
+    const btn = stage.querySelector(".tree-node");
+    const branch = stage.querySelector(".tree-branch");
+    if (btn) btn.setAttribute("aria-expanded", "false");
+    if (branch) branch.setAttribute("aria-hidden", "true");
+    stage.querySelectorAll(".mem-branch").forEach(function (mem) {
+      closeMem(mem);
+      mem.classList.remove("is-done");
+    });
   }
 
   function stageEl(name) {
@@ -239,7 +262,7 @@
   }
 
   async function pulseConnector(fromStage) {
-    const connector = fromStage.querySelector(":scope > .tree-connector");
+    const connector = fromStage && fromStage.querySelector(":scope > .tree-connector");
     if (!connector) return;
     const packet = connector.querySelector(".flow-packet");
     connector.classList.add("is-flowing");
@@ -248,7 +271,7 @@
       void packet.offsetWidth;
       packet.classList.add("is-travel");
     }
-    await wait(520);
+    await wait(360);
     connector.classList.remove("is-flowing");
   }
 
@@ -256,9 +279,13 @@
     for (let i = 0; i < names.length; i++) {
       if (!simulating) return;
       const name = names[i];
-      const el = setFieldText(name, map[name] || "—");
-      if (el) await typewriter(el, map[name] || "—", 11 + Math.min(i, 6));
-      await wait(90);
+      const text = map[name] || "—";
+      const el = setFieldText(name, text);
+      if (el) {
+        const speed = text.length > 70 ? 5 : text.length > 35 ? 7 : 9;
+        await typewriter(el, text, speed);
+      }
+      await wait(30);
     }
   }
 
@@ -266,21 +293,12 @@
     const stage = stageEl(name);
     if (!stage) return;
 
-    STAGE_ORDER.forEach(function (s) {
-      const el = stageEl(s);
-      if (!el || el === stage) return;
-      if (el.classList.contains("is-active") || el.classList.contains("is-open")) {
-        setStageState(el, "is-done");
-      }
-    });
-
-    setStageState(stage, "is-active");
-    stage.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    await wait(180);
+    activateStage(stage);
+    await wait(90);
 
     if (name === "user") {
       setBar("User · receiving prompt", "is-run");
-      await typeNamed(map, ["user.session"]);
+      await typeNamed(map, ["user.prompt", "user.session"]);
     } else if (name === "intent") {
       setBar("Intent Parser · structuring request", "is-run");
       await typeNamed(map, [
@@ -299,10 +317,10 @@
         if (!simulating) return;
         const mem = stage.querySelector('.mem-branch[data-mem="' + MEM_ORDER[i] + '"]');
         if (!mem) continue;
-        stage.querySelectorAll(".mem-branch.is-open").forEach(function (other) {
+        stage.querySelectorAll(".mem-branch.is-active").forEach(function (other) {
           if (other !== mem) {
             other.classList.remove("is-active");
-            other.classList.add("is-done");
+            other.classList.add("is-open", "is-done");
           }
         });
         openMem(mem);
@@ -313,8 +331,8 @@
         setBar("Memory · " + MEM_ORDER[i], "is-run");
         await typeNamed(map, names);
         mem.classList.remove("is-active");
-        mem.classList.add("is-done");
-        await wait(160);
+        mem.classList.add("is-open", "is-done");
+        await wait(50);
       }
     } else if (name === "tools") {
       setBar("Tools · performing real work", "is-run");
@@ -338,13 +356,7 @@
       await typeNamed(map, ["answer.response"]);
     }
 
-    setStageState(stage, "is-done");
-    // Keep branch visible after done during sim
-    stage.classList.add("is-open", "is-done");
-    const btn = stage.querySelector(".tree-node");
-    const branch = stage.querySelector(".tree-branch");
-    if (btn) btn.setAttribute("aria-expanded", "true");
-    if (branch) branch.setAttribute("aria-hidden", "false");
+    completeStage(stage);
   }
 
   async function runSimulation(prompt) {
@@ -352,6 +364,7 @@
     simulating = true;
     clearPending();
     pipeline.classList.add("is-simulating");
+    document.body.classList.add("is-simulating");
     if (sendBtn) sendBtn.disabled = true;
     if (input) input.disabled = true;
     if (stopBtn) stopBtn.hidden = false;
@@ -359,43 +372,21 @@
     resetAllFields();
     STAGE_ORDER.forEach(function (name) {
       const el = stageEl(name);
-      if (el) {
-        setStageState(el, null);
-        el.classList.remove("is-done", "is-active", "is-open", "is-flow");
-      }
-    });
-    pipeline.querySelectorAll(".mem-branch").forEach(function (m) {
-      closeMem(m);
-      m.classList.remove("is-done");
+      if (el) resetStage(el);
     });
 
     const map = buildSimulation(prompt);
     setBar("Starting inference simulation…", "is-run");
 
-    // Open user with composer still visible
-    const user = stageEl("user");
-    setStageState(user, "is-active");
-    await wait(250);
-    await typeNamed(map, ["user.session"]);
-    await wait(200);
-    await pulseConnector(user);
-    setStageState(user, "is-done");
-    user.classList.add("is-open", "is-done");
-
-    for (let i = 1; i < STAGE_ORDER.length; i++) {
+    for (let i = 0; i < STAGE_ORDER.length; i++) {
       if (!simulating) return;
-      const name = STAGE_ORDER[i];
-      const prev = stageEl(STAGE_ORDER[i - 1]);
-      if (prev && i > 1) await pulseConnector(prev);
-      else if (i === 1) {
-        /* already pulsed from user */
-      }
-      await runStage(name, map);
-      await wait(220);
+      if (i > 0) await pulseConnector(stageEl(STAGE_ORDER[i - 1]));
+      await runStage(STAGE_ORDER[i], map);
+      await wait(60);
     }
 
     if (!simulating) return;
-    setBar("Simulation complete — click any stage to inspect, or send another prompt.", "is-done");
+    setBar("Simulation complete — every stage stayed open. Send another prompt anytime.", "is-done");
     finishSim(false);
   }
 
@@ -403,6 +394,7 @@
     simulating = false;
     clearPending();
     pipeline.classList.remove("is-simulating");
+    document.body.classList.remove("is-simulating");
     if (sendBtn) sendBtn.disabled = false;
     if (input) input.disabled = false;
     if (stopBtn) stopBtn.hidden = true;
@@ -418,38 +410,34 @@
     finishSim(true);
   }
 
-  // Manual click explore (disabled interaction steal during sim except stop)
   function openStageManual(stage) {
     if (simulating) return;
-    pipeline.querySelectorAll(".tree-stage.is-open").forEach(function (other) {
+    // After a sim, keep other completed stages open; only toggle focus styling
+    pipeline.querySelectorAll(".tree-stage.is-active").forEach(function (other) {
       if (other !== stage) {
-        other.classList.remove("is-open", "is-active");
-        const b = other.querySelector(".tree-node");
-        const br = other.querySelector(".tree-branch");
-        if (b) b.setAttribute("aria-expanded", "false");
-        if (br) br.setAttribute("aria-hidden", "true");
-        other.querySelectorAll(".mem-branch.is-open").forEach(closeMem);
+        other.classList.remove("is-active");
+        if (other.querySelector("[data-field]") && other.querySelector("[data-field]").textContent) {
+          other.classList.add("is-open", "is-done");
+          keepBranchOpen(other);
+        }
       }
     });
     stage.classList.add("is-open", "is-active");
     stage.classList.remove("is-done");
-    const btn = stage.querySelector(".tree-node");
+    keepBranchOpen(stage);
     const branch = stage.querySelector(".tree-branch");
-    if (btn) btn.setAttribute("aria-expanded", "true");
-    if (branch) {
-      branch.setAttribute("aria-hidden", "false");
-      const els = Array.prototype.filter.call(branch.querySelectorAll(".typewriter"), function (el) {
-        return !el.closest(".mem-leaves");
-      });
-      els.forEach(function (el, index) {
-        const text = el.getAttribute("data-text") || "";
-        if (!text || text === "—") return;
-        window.setTimeout(function () {
-          el.setAttribute("data-sim", String(simToken));
-          typewriter(el, text, 14);
-        }, 120 + index * 80);
-      });
-    }
+    if (!branch) return;
+    const els = Array.prototype.filter.call(branch.querySelectorAll(".typewriter"), function (el) {
+      return !el.closest(".mem-leaves");
+    });
+    els.forEach(function (el, index) {
+      const text = el.getAttribute("data-text") || "";
+      if (!text || text === "—" || el.textContent === text) return;
+      window.setTimeout(function () {
+        el.setAttribute("data-sim", String(simToken));
+        typewriter(el, text, 8);
+      }, 80 + index * 50);
+    });
   }
 
   if (form) {
@@ -476,31 +464,29 @@
     input.addEventListener("keydown", function (event) {
       if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
-        form.requestSubmit();
+        if (form) form.requestSubmit();
       }
     });
   }
 
   pipeline.addEventListener("click", function (event) {
-    if (event.target.closest(".composer")) return;
-
     const memBtn = event.target.closest(".mem-node");
     if (memBtn && pipeline.contains(memBtn)) {
       if (simulating) return;
       event.preventDefault();
       const mem = memBtn.closest(".mem-branch");
       if (!mem) return;
-      if (mem.classList.contains("is-open")) closeMem(mem);
-      else {
+      if (mem.classList.contains("is-open") && !mem.classList.contains("is-done")) {
+        closeMem(mem);
+      } else {
         openMem(mem);
-        const leaves = mem.querySelectorAll(".typewriter");
-        leaves.forEach(function (el, index) {
+        mem.querySelectorAll(".typewriter").forEach(function (el, index) {
           const text = el.getAttribute("data-text") || "";
-          if (!text || text === "—") return;
+          if (!text || text === "—" || el.textContent === text) return;
           window.setTimeout(function () {
             el.setAttribute("data-sim", String(simToken));
-            typewriter(el, text, 14);
-          }, 100 + index * 80);
+            typewriter(el, text, 8);
+          }, 60 + index * 40);
         });
       }
       return;
@@ -512,17 +498,19 @@
       event.preventDefault();
       const stage = nodeBtn.closest(".tree-stage");
       if (!stage) return;
-      if (stage.classList.contains("is-open") && !stage.classList.contains("is-done")) {
-        stage.classList.remove("is-open", "is-active");
-        const b = stage.querySelector(".tree-node");
-        const br = stage.querySelector(".tree-branch");
-        if (b) b.setAttribute("aria-expanded", "false");
-        if (br) br.setAttribute("aria-hidden", "true");
-      } else {
-        openStageManual(stage);
-      }
+      openStageManual(stage);
     }
   });
+
+  // Boot: keep User open, empty awaiting state
+  const boot = stageEl("user");
+  if (boot) {
+    activateStage(boot);
+    const promptEl = field("user.prompt");
+    const sessionEl = field("user.session");
+    if (promptEl) promptEl.textContent = "awaiting prompt…";
+    if (sessionEl) sessionEl.textContent = "awaiting prompt…";
+  }
 
   setBar("Ready — enter a prompt to run a full inference simulation.", "is-idle");
 })();
