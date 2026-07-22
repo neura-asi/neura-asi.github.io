@@ -260,10 +260,6 @@ body {
   pointer-events: none;
 }
 
-body.is-simulating .composer__stop {
-  pointer-events: auto;
-}
-
 .tree-stage {
   position: relative;
   display: flex;
@@ -445,101 +441,35 @@ body.is-simulating .composer__stop {
   display: none;
 }
 
-/* Composer — full width above the tree */
+/* Composer — single rounded read-only line */
 .composer {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
   width: 100%;
-  max-width: 100%;
   margin: 0 0 36px;
-  padding: 0;
-}
-
-.composer__label {
-  font-family: "Chakra Petch", sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--leaf-k);
 }
 
 .composer__input {
   display: block;
   width: 100%;
-  resize: vertical;
-  min-height: 120px;
-  padding: 16px 18px;
+  height: 48px;
+  padding: 0 18px;
   border: 1px solid var(--branch);
-  border-radius: 0;
+  border-radius: 999px;
   background: color-mix(in srgb, var(--fg) 3%, transparent);
   color: var(--fg);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 15px;
-  line-height: 1.55;
+  font-size: 14px;
+  line-height: 48px;
   outline: none;
-  transition: border-color 0.2s ease, background-color 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: default;
+  pointer-events: none;
+  user-select: none;
 }
 
 .composer__input:focus {
   border-color: var(--how-bg);
-  background: color-mix(in srgb, var(--how-bg) 6%, transparent);
-}
-
-.composer__input:disabled {
-  opacity: 0.65;
-}
-
-.composer__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: center;
-}
-
-.composer__send,
-.composer__stop {
-  font-family: "Chakra Petch", sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  padding: 10px 20px;
-  border: none;
-  cursor: pointer;
-}
-
-.composer__send {
-  background: var(--how-bg);
-  color: #fff;
-}
-
-.composer__send:hover:not(:disabled) {
-  filter: brightness(1.08);
-}
-
-.composer__send:disabled {
-  opacity: 0.55;
-  cursor: default;
-}
-
-.composer__stop {
-  background: transparent;
-  color: var(--muted);
-  border-bottom: 1px solid var(--branch);
-  padding-left: 0;
-  padding-right: 0;
-}
-
-.composer__stop:hover {
-  color: var(--fg);
-}
-
-.composer__hint {
-  margin-left: auto;
-  font-size: 12px;
-  color: var(--muted);
 }
 
 .leaf--composer {
