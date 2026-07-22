@@ -540,6 +540,19 @@
       </section>
     </main>
 
+    <div class="playback" id="playback" role="toolbar" aria-label="Demo playback controls">
+      <button type="button" class="playback__btn" id="btn-pause" aria-pressed="false">
+        Pause
+      </button>
+      <button type="button" class="playback__btn" id="btn-slow" aria-pressed="false">
+        Slow
+      </button>
+      <button type="button" class="playback__btn playback__btn--accent" id="btn-next">
+        Next
+      </button>
+      <span class="playback__meta" id="playback-meta" aria-live="polite">1 / 20</span>
+    </div>
+
     <script src="theme.js"></script>
     <script src="viz.js"></script>
     <script src="pipeline.js"></script>

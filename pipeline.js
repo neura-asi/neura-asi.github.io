@@ -5,6 +5,10 @@
   const input = document.getElementById("prompt-input");
   const barText = document.getElementById("sim-bar-text");
   const simBar = document.getElementById("sim-bar");
+  const btnPause = document.getElementById("btn-pause");
+  const btnSlow = document.getElementById("btn-slow");
+  const btnNext = document.getElementById("btn-next");
+  const playbackMeta = document.getElementById("playback-meta");
 
   const PROMPTS = [
     "Refactor auth middleware to support API keys + session cookies without breaking CLI login.",
@@ -55,26 +59,72 @@
   let simToken = 0;
   let promptIndex = 0;
   let loopTimer = null;
+  let paused = false;
+  let speedFactor = 1;
   const typeTimers = new WeakMap();
   const pendingTimeouts = [];
+  const sleepResolvers = [];
 
   function setBar(msg, mode) {
     if (barText) barText.textContent = msg;
     if (simBar) {
-      simBar.classList.remove("is-run", "is-done", "is-idle");
-      simBar.classList.add(mode || "is-idle");
+      simBar.classList.remove("is-run", "is-done", "is-idle", "is-paused");
+      if (paused && mode !== "is-idle") {
+        simBar.classList.add("is-paused");
+      } else {
+        simBar.classList.add(mode || "is-idle");
+      }
     }
   }
 
-  function wait(ms) {
+  function syncPlaybackUI() {
+    if (btnPause) {
+      btnPause.textContent = paused ? "Resume" : "Pause";
+      btnPause.setAttribute("aria-pressed", paused ? "true" : "false");
+    }
+    if (btnSlow) {
+      btnSlow.textContent = speedFactor > 1 ? "Slow · on" : "Slow";
+      btnSlow.setAttribute("aria-pressed", speedFactor > 1 ? "true" : "false");
+    }
+    if (btnNext) {
+      btnNext.textContent = simulating || loopTimer ? "Next" : "Start";
+    }
+    if (playbackMeta) {
+      playbackMeta.textContent = promptIndex + 1 + " / " + PROMPTS.length;
+    }
+    document.body.classList.toggle("is-paused", paused);
+    document.body.classList.toggle("is-slow", speedFactor > 1);
+  }
+
+  function sleep(ms) {
     return new Promise(function (resolve) {
-      const id = window.setTimeout(resolve, ms);
+      const id = window.setTimeout(function () {
+        resolve();
+      }, ms);
       pendingTimeouts.push(id);
+      sleepResolvers.push(resolve);
     });
+  }
+
+  async function wait(ms) {
+    const token = simToken;
+    let left = Math.max(0, ms * speedFactor);
+    while (left > 0) {
+      if (!simulating || simToken !== token) return;
+      while (paused) {
+        await sleep(60);
+        if (!simulating || simToken !== token) return;
+      }
+      const slice = Math.min(60, left);
+      await sleep(slice);
+      if (simToken !== token) return;
+      left -= slice;
+    }
   }
 
   function clearPending() {
     while (pendingTimeouts.length) window.clearTimeout(pendingTimeouts.pop());
+    while (sleepResolvers.length) sleepResolvers.pop()();
     if (loopTimer) {
       window.clearTimeout(loopTimer);
       loopTimer = null;
@@ -102,11 +152,19 @@
           resolve();
           return;
         }
-        const chunk = text.length > 80 ? 3 : text.length > 40 ? 2 : 1;
+        if (paused) {
+          const id = window.setTimeout(step, 70);
+          typeTimers.set(el, id);
+          pendingTimeouts.push(id);
+          return;
+        }
+        const chunk =
+          speedFactor >= 2.5 ? 1 : text.length > 80 ? 3 : text.length > 40 ? 2 : 1;
         i = Math.min(text.length, i + chunk);
         el.textContent = text.slice(0, i);
         if (i < text.length) {
-          const id = window.setTimeout(step, speed + Math.random() * 8);
+          const delay = (speed + Math.random() * 8) * speedFactor;
+          const id = window.setTimeout(step, delay);
           typeTimers.set(el, id);
           pendingTimeouts.push(id);
         } else {
@@ -316,8 +374,9 @@
   }
 
   async function revealNamed(map, names) {
+    const token = simToken;
     for (let i = 0; i < names.length; i++) {
-      if (!simulating) return;
+      if (!simulating || simToken !== token) return;
       const name = names[i];
       const text = map[name] || "—";
       const el = setFieldText(name, text);
@@ -330,6 +389,7 @@
       if (typeIt) {
         const speed = text.length > 90 ? 4 : text.length > 50 ? 6 : 8;
         await typewriter(el, text, speed);
+        if (simToken !== token) return;
         await wait(40);
       } else {
         // Metadata / paths / chip-lists appear instantly with a flash
@@ -337,6 +397,7 @@
         el.classList.add("reveal-flash");
         el.textContent = text;
         await wait(70);
+        if (simToken !== token) return;
         el.classList.remove("reveal-flash");
         await wait(35);
       }
@@ -417,12 +478,25 @@
     if (input) input.value = prompt;
   }
 
+  function startPromptAt(index) {
+    promptIndex = ((index % PROMPTS.length) + PROMPTS.length) % PROMPTS.length;
+    paused = false;
+    syncPlaybackUI();
+    runSimulation(PROMPTS[promptIndex]);
+  }
+
+  function goNextPrompt() {
+    const next = (promptIndex + 1) % PROMPTS.length;
+    startPromptAt(next);
+  }
+
   async function runSimulation(prompt) {
-    simToken += 1;
+    const myToken = ++simToken;
     simulating = true;
     clearPending();
     pipeline.classList.add("is-simulating");
     document.body.classList.add("is-simulating");
+    syncPlaybackUI();
 
     showPrompt(prompt);
     resetAllFields();
@@ -432,25 +506,105 @@
     });
 
     const map = buildSimulation(prompt);
-    setBar("Demo " + (promptIndex + 1) + "/" + PROMPTS.length + " · running", "is-run");
+    setBar(
+      "Demo " + (promptIndex + 1) + "/" + PROMPTS.length + " · running" + (speedFactor > 1 ? " · slow" : ""),
+      "is-run"
+    );
+    syncPlaybackUI();
 
     for (let i = 0; i < STAGE_ORDER.length; i++) {
-      if (!simulating) return;
+      if (!simulating || simToken !== myToken) return;
       if (i > 0) await pulseConnector(stageEl(STAGE_ORDER[i - 1]));
+      if (!simulating || simToken !== myToken) return;
       await runStage(STAGE_ORDER[i], map);
+      if (!simulating || simToken !== myToken) return;
       await wait(50);
     }
 
-    if (!simulating) return;
-    setBar("Demo " + (promptIndex + 1) + "/" + PROMPTS.length + " · complete — next prompt soon", "is-done");
+    if (!simulating || simToken !== myToken) return;
+    setBar(
+      "Demo " + (promptIndex + 1) + "/" + PROMPTS.length + " · complete — next prompt soon",
+      "is-done"
+    );
     simulating = false;
     pipeline.classList.remove("is-simulating");
     document.body.classList.remove("is-simulating");
+    syncPlaybackUI();
 
-    promptIndex = (promptIndex + 1) % PROMPTS.length;
-    loopTimer = window.setTimeout(function () {
-      runSimulation(PROMPTS[promptIndex]);
-    }, 2000);
+    const nextIndex = (promptIndex + 1) % PROMPTS.length;
+    let left = 2000 * speedFactor;
+    while (left > 0) {
+      if (simToken !== myToken) return;
+      while (paused) {
+        setBar(
+          "Demo " + (promptIndex + 1) + "/" + PROMPTS.length + " · paused — resume or next",
+          "is-paused"
+        );
+        await sleep(80);
+        if (simToken !== myToken) return;
+      }
+      setBar(
+        "Demo " + (promptIndex + 1) + "/" + PROMPTS.length + " · complete — next prompt soon",
+        "is-done"
+      );
+      const slice = Math.min(80, left);
+      await sleep(slice);
+      if (simToken !== myToken) return;
+      left -= slice;
+    }
+
+    if (simToken !== myToken) return;
+    promptIndex = nextIndex;
+    runSimulation(PROMPTS[promptIndex]);
+  }
+
+  function togglePause() {
+    paused = !paused;
+    syncPlaybackUI();
+    if (paused) {
+      setBar(
+        "Demo " + (promptIndex + 1) + "/" + PROMPTS.length + " · paused",
+        "is-paused"
+      );
+    } else if (simulating) {
+      setBar(
+        "Demo " +
+          (promptIndex + 1) +
+          "/" +
+          PROMPTS.length +
+          " · running" +
+          (speedFactor > 1 ? " · slow" : ""),
+        "is-run"
+      );
+    }
+  }
+
+  function toggleSlow() {
+    speedFactor = speedFactor > 1 ? 1 : 3.2;
+    syncPlaybackUI();
+    if (simulating && !paused) {
+      setBar(
+        "Demo " +
+          (promptIndex + 1) +
+          "/" +
+          PROMPTS.length +
+          " · running" +
+          (speedFactor > 1 ? " · slow" : ""),
+        "is-run"
+      );
+    }
+  }
+
+  if (btnPause) btnPause.addEventListener("click", togglePause);
+  if (btnSlow) btnSlow.addEventListener("click", toggleSlow);
+  if (btnNext) {
+    btnNext.addEventListener("click", function () {
+      if (!simulating && !loopTimer && simToken === 0) {
+        startPromptAt(0);
+        return;
+      }
+      goNextPrompt();
+    });
   }
 
   function openStageManual(stage) {
@@ -492,6 +646,7 @@
   const boot = stageEl("user");
   if (boot) activateStage(boot);
   showPrompt(PROMPTS[0]);
+  syncPlaybackUI();
   setBar("Starting live Neura turn-loop demo…", "is-run");
   window.setTimeout(function () {
     runSimulation(PROMPTS[0]);
