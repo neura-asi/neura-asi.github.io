@@ -59,14 +59,17 @@
           remembering and reusing work instead of starting from scratch every
           time.
         </p>
-        <p class="section__hint">Click any stage to expand its subsystem.</p>
+        <p class="section__hint">Watch the live machines — then click any stage for a deeper diagram.</p>
 
         <div class="pipeline" id="pipeline" aria-label="Interactive inference pipeline">
           <!-- User -->
           <div class="stage" data-stage="user">
             <button type="button" class="stage__node" aria-expanded="false" aria-controls="panel-user">
-              <span class="stage__label">User</span>
-              <span class="stage__chevron" aria-hidden="true"></span>
+              <span class="stage__viz" data-viz="user" aria-hidden="true"></span>
+              <span class="stage__meta">
+                <span class="stage__label">User</span>
+                <span class="stage__chevron" aria-hidden="true"></span>
+              </span>
             </button>
             <div class="stage__panel" id="panel-user" aria-hidden="true">
               <div class="stage__panel-inner">
@@ -93,8 +96,11 @@
           <!-- Intent Parser -->
           <div class="stage" data-stage="intent">
             <button type="button" class="stage__node" aria-expanded="false" aria-controls="panel-intent">
-              <span class="stage__label">Intent Parser</span>
-              <span class="stage__chevron" aria-hidden="true"></span>
+              <span class="stage__viz" data-viz="intent" aria-hidden="true"></span>
+              <span class="stage__meta">
+                <span class="stage__label">Intent Parser</span>
+                <span class="stage__chevron" aria-hidden="true"></span>
+              </span>
             </button>
             <div class="stage__panel" id="panel-intent" aria-hidden="true">
               <div class="stage__panel-inner">
@@ -139,8 +145,11 @@
           <!-- Planner -->
           <div class="stage" data-stage="planner">
             <button type="button" class="stage__node" aria-expanded="false" aria-controls="panel-planner">
-              <span class="stage__label">Planner</span>
-              <span class="stage__chevron" aria-hidden="true"></span>
+              <span class="stage__viz" data-viz="planner" aria-hidden="true"></span>
+              <span class="stage__meta">
+                <span class="stage__label">Planner</span>
+                <span class="stage__chevron" aria-hidden="true"></span>
+              </span>
             </button>
             <div class="stage__panel" id="panel-planner" aria-hidden="true">
               <div class="stage__panel-inner">
@@ -178,8 +187,11 @@
           <!-- Memory / Cache / Context Vault -->
           <div class="stage" data-stage="memory">
             <button type="button" class="stage__node" aria-expanded="false" aria-controls="panel-memory">
-              <span class="stage__label">Memory / Cache / Context Vault</span>
-              <span class="stage__chevron" aria-hidden="true"></span>
+              <span class="stage__viz stage__viz--wide" data-viz="memory" aria-hidden="true"></span>
+              <span class="stage__meta">
+                <span class="stage__label">Memory / Cache / Context Vault</span>
+                <span class="stage__chevron" aria-hidden="true"></span>
+              </span>
             </button>
             <div class="stage__panel" id="panel-memory" aria-hidden="true">
               <div class="stage__panel-inner">
@@ -371,8 +383,11 @@
           <!-- Tools -->
           <div class="stage" data-stage="tools">
             <button type="button" class="stage__node" aria-expanded="false" aria-controls="panel-tools">
-              <span class="stage__label">Tools</span>
-              <span class="stage__chevron" aria-hidden="true"></span>
+              <span class="stage__viz" data-viz="tools" aria-hidden="true"></span>
+              <span class="stage__meta">
+                <span class="stage__label">Tools</span>
+                <span class="stage__chevron" aria-hidden="true"></span>
+              </span>
             </button>
             <div class="stage__panel" id="panel-tools" aria-hidden="true">
               <div class="stage__panel-inner">
@@ -414,8 +429,11 @@
           <!-- Symbolic Engine -->
           <div class="stage" data-stage="symbolic">
             <button type="button" class="stage__node" aria-expanded="false" aria-controls="panel-symbolic">
-              <span class="stage__label">Symbolic Engine</span>
-              <span class="stage__chevron" aria-hidden="true"></span>
+              <span class="stage__viz" data-viz="symbolic" aria-hidden="true"></span>
+              <span class="stage__meta">
+                <span class="stage__label">Symbolic Engine</span>
+                <span class="stage__chevron" aria-hidden="true"></span>
+              </span>
             </button>
             <div class="stage__panel" id="panel-symbolic" aria-hidden="true">
               <div class="stage__panel-inner">
@@ -453,8 +471,11 @@
           <!-- Local / Remote AI -->
           <div class="stage" data-stage="ai">
             <button type="button" class="stage__node" aria-expanded="false" aria-controls="panel-ai">
-              <span class="stage__label">Local / Remote AI</span>
-              <span class="stage__chevron" aria-hidden="true"></span>
+              <span class="stage__viz" data-viz="ai" aria-hidden="true"></span>
+              <span class="stage__meta">
+                <span class="stage__label">Local / Remote AI</span>
+                <span class="stage__chevron" aria-hidden="true"></span>
+              </span>
             </button>
             <div class="stage__panel" id="panel-ai" aria-hidden="true">
               <div class="stage__panel-inner">
@@ -491,8 +512,11 @@
           <!-- Verification -->
           <div class="stage" data-stage="verification">
             <button type="button" class="stage__node" aria-expanded="false" aria-controls="panel-verification">
-              <span class="stage__label">Verification</span>
-              <span class="stage__chevron" aria-hidden="true"></span>
+              <span class="stage__viz" data-viz="verification" aria-hidden="true"></span>
+              <span class="stage__meta">
+                <span class="stage__label">Verification</span>
+                <span class="stage__chevron" aria-hidden="true"></span>
+              </span>
             </button>
             <div class="stage__panel" id="panel-verification" aria-hidden="true">
               <div class="stage__panel-inner">
@@ -530,8 +554,11 @@
           <!-- Answer -->
           <div class="stage" data-stage="answer">
             <button type="button" class="stage__node stage__node--end" aria-expanded="false" aria-controls="panel-answer">
-              <span class="stage__label">Answer</span>
-              <span class="stage__chevron" aria-hidden="true"></span>
+              <span class="stage__viz" data-viz="answer" aria-hidden="true"></span>
+              <span class="stage__meta">
+                <span class="stage__label">Answer</span>
+                <span class="stage__chevron" aria-hidden="true"></span>
+              </span>
             </button>
             <div class="stage__panel" id="panel-answer" aria-hidden="true">
               <div class="stage__panel-inner">
@@ -557,5 +584,6 @@
 
     <script src="theme.js"></script>
     <script src="pipeline.js"></script>
+    <script src="viz.js"></script>
   </body>
 </html>
