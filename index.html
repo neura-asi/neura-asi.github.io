@@ -59,9 +59,14 @@
           remembering and reusing work instead of starting from scratch every
           time.
         </p>
-        <p class="section__hint">Click a stage — it branches right and types what that subsystem sees.</p>
+        <p class="section__hint">Type a prompt and hit Send — watch Neura simulate the full inference path in real time. You can also click any stage.</p>
 
         <div class="tree" id="pipeline" aria-label="Interactive inference tree">
+          <div class="sim-bar" id="sim-bar" aria-live="polite">
+            <span class="sim-bar__dot" aria-hidden="true"></span>
+            <span class="sim-bar__text" id="sim-bar-text">Ready — enter a prompt to run a full inference simulation.</span>
+          </div>
+
           <!-- USER -->
           <div class="tree-stage is-open" data-stage="user">
             <div class="tree-row">
@@ -76,21 +81,32 @@
                   <path d="M28 20 H48" />
                 </svg>
                 <div class="tree-leaves">
-                  <div class="leaf leaf--prompt">
-                    <span class="leaf-k">prompt</span>
-                    <span
-                      class="leaf-v typewriter"
-                      data-text="Refactor auth middleware to support API keys + session cookies. Keep existing tests green and don't break the CLI login flow."
-                    ></span>
+                  <div class="leaf leaf--composer">
+                    <form class="composer" id="prompt-form">
+                      <label class="composer__label" for="prompt-input">prompt</label>
+                      <textarea
+                        id="prompt-input"
+                        class="composer__input"
+                        rows="3"
+                        maxlength="500"
+                        placeholder="Ask Neura to do something…"
+                      >Refactor auth middleware to support API keys + session cookies. Keep existing tests green and don't break the CLI login flow.</textarea>
+                      <div class="composer__actions">
+                        <button type="submit" class="composer__send" id="prompt-send">Send</button>
+                        <button type="button" class="composer__stop" id="prompt-stop" hidden>Stop</button>
+                      </div>
+                    </form>
                   </div>
                   <div class="leaf">
                     <span class="leaf-k">session</span>
-                    <span class="leaf-v typewriter" data-text="new reasoning session opened"></span>
+                    <span class="leaf-v typewriter" data-field="user.session" data-text="awaiting prompt…"></span>
                   </div>
                 </div>
               </div>
             </div>
-            <div class="tree-connector" aria-hidden="true"></div>
+            <div class="tree-connector" aria-hidden="true">
+              <span class="flow-packet" aria-hidden="true"></span>
+            </div>
           </div>
 
           <!-- INTENT -->
@@ -109,28 +125,28 @@
                 <div class="tree-leaves">
                   <div class="leaf">
                     <span class="leaf-k">intent</span>
-                    <span class="leaf-v typewriter" data-text="refactor_auth_middleware"></span>
+                    <span class="leaf-v typewriter" data-field="intent.intent" data-text="—"></span>
                   </div>
                   <div class="leaf">
                     <span class="leaf-k">files</span>
-                    <span class="leaf-v typewriter" data-text="src/auth/middleware.ts · src/cli/login.ts · tests/auth.test.ts"></span>
+                    <span class="leaf-v typewriter" data-field="intent.files" data-text="—"></span>
                   </div>
                   <div class="leaf">
                     <span class="leaf-k">constraints</span>
-                    <span class="leaf-v typewriter" data-text="keep tests green · preserve CLI login · dual auth modes"></span>
+                    <span class="leaf-v typewriter" data-field="intent.constraints" data-text="—"></span>
                   </div>
                   <div class="leaf">
                     <span class="leaf-k">tools</span>
-                    <span class="leaf-v typewriter" data-text="read · edit · test · git_diff"></span>
+                    <span class="leaf-v typewriter" data-field="intent.tools" data-text="—"></span>
                   </div>
                   <div class="leaf">
                     <span class="leaf-k">confidence</span>
-                    <span class="leaf-v typewriter" data-text="0.91"></span>
+                    <span class="leaf-v typewriter" data-field="intent.confidence" data-text="—"></span>
                   </div>
                 </div>
               </div>
             </div>
-            <div class="tree-connector" aria-hidden="true"></div>
+            <div class="tree-connector" aria-hidden="true"><span class="flow-packet" aria-hidden="true"></span></div>
           </div>
 
           <!-- PLANNER -->
@@ -149,24 +165,24 @@
                 <div class="tree-leaves tree-leaves--plan">
                   <div class="leaf leaf--path">
                     <span class="leaf-k">01</span>
-                    <span class="leaf-v typewriter" data-text="read auth + CLI entrypoints"></span>
+                    <span class="leaf-v typewriter" data-field="planner.1" data-text="—"></span>
                   </div>
                   <div class="leaf leaf--path">
                     <span class="leaf-k">02</span>
-                    <span class="leaf-v typewriter" data-text="search memory for prior auth decisions"></span>
+                    <span class="leaf-v typewriter" data-field="planner.2" data-text="—"></span>
                   </div>
                   <div class="leaf leaf--path">
                     <span class="leaf-k">03</span>
-                    <span class="leaf-v typewriter" data-text="run tools → patch middleware"></span>
+                    <span class="leaf-v typewriter" data-field="planner.3" data-text="—"></span>
                   </div>
                   <div class="leaf leaf--path leaf--chosen">
                     <span class="leaf-k">04</span>
-                    <span class="leaf-v typewriter" data-text="generate response + verify tests"></span>
+                    <span class="leaf-v typewriter" data-field="planner.4" data-text="—"></span>
                   </div>
                 </div>
               </div>
             </div>
-            <div class="tree-connector" aria-hidden="true"></div>
+            <div class="tree-connector" aria-hidden="true"><span class="flow-packet" aria-hidden="true"></span></div>
           </div>
 
           <!-- MEMORY -->
@@ -191,15 +207,15 @@
                     <div class="mem-leaves" aria-hidden="true">
                       <div class="leaf">
                         <span class="leaf-k">hit</span>
-                        <span class="leaf-v typewriter" data-text="prefer dual-auth pattern from project decisions"></span>
+                        <span class="leaf-v typewriter" data-field="memory.graph.hit" data-text="—"></span>
                       </div>
                       <div class="leaf">
                         <span class="leaf-k">edges</span>
-                        <span class="leaf-v typewriter" data-text="preferences → project → prior auth refactor"></span>
+                        <span class="leaf-v typewriter" data-field="memory.graph.edges" data-text="—"></span>
                       </div>
                       <div class="leaf">
                         <span class="leaf-k">retrieve</span>
-                        <span class="leaf-v typewriter" data-text="embed search → cascade nearby memories"></span>
+                        <span class="leaf-v typewriter" data-field="memory.graph.retrieve" data-text="—"></span>
                       </div>
                     </div>
                   </div>
@@ -211,15 +227,15 @@
                     <div class="mem-leaves" aria-hidden="true">
                       <div class="leaf">
                         <span class="leaf-k">compress</span>
-                        <span class="leaf-v typewriter" data-text='large prior chat → &lt;ctx id="a7f3"&gt;'></span>
+                        <span class="leaf-v typewriter" data-field="memory.vault.compress" data-text="—"></span>
                       </div>
                       <div class="leaf">
                         <span class="leaf-k">store</span>
-                        <span class="leaf-v typewriter" data-text="exact text kept locally"></span>
+                        <span class="leaf-v typewriter" data-field="memory.vault.store" data-text="—"></span>
                       </div>
                       <div class="leaf">
                         <span class="leaf-k">restore</span>
-                        <span class="leaf-v typewriter" data-text=".ctx_get → original bytes on demand"></span>
+                        <span class="leaf-v typewriter" data-field="memory.vault.restore" data-text="—"></span>
                       </div>
                     </div>
                   </div>
@@ -231,11 +247,11 @@
                     <div class="mem-leaves" aria-hidden="true">
                       <div class="leaf">
                         <span class="leaf-k">lookup</span>
-                        <span class="leaf-v typewriter" data-text="auth middleware signature… miss"></span>
+                        <span class="leaf-v typewriter" data-field="memory.cache.lookup" data-text="—"></span>
                       </div>
                       <div class="leaf">
                         <span class="leaf-k">path</span>
-                        <span class="leaf-v typewriter" data-text="execute normally → save result"></span>
+                        <span class="leaf-v typewriter" data-field="memory.cache.path" data-text="—"></span>
                       </div>
                     </div>
                   </div>
@@ -247,18 +263,18 @@
                     <div class="mem-leaves" aria-hidden="true">
                       <div class="leaf leaf--note">
                         <span class="leaf-k">note</span>
-                        <span class="leaf-v typewriter" data-text="helper model — not the main AI"></span>
+                        <span class="leaf-v typewriter" data-field="memory.sidecar.note" data-text="—"></span>
                       </div>
                       <div class="leaf">
                         <span class="leaf-k">jobs</span>
-                        <span class="leaf-v typewriter" data-text="extract · merge · summarize · verify · contradict"></span>
+                        <span class="leaf-v typewriter" data-field="memory.sidecar.jobs" data-text="—"></span>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-            <div class="tree-connector" aria-hidden="true"></div>
+            <div class="tree-connector" aria-hidden="true"><span class="flow-packet" aria-hidden="true"></span></div>
           </div>
 
           <!-- TOOLS -->
@@ -277,24 +293,24 @@
                 <div class="tree-leaves">
                   <div class="leaf">
                     <span class="leaf-k">files</span>
-                    <span class="leaf-v typewriter" data-text="read middleware.ts · patch dual auth gate"></span>
+                    <span class="leaf-v typewriter" data-field="tools.files" data-text="—"></span>
                   </div>
                   <div class="leaf">
                     <span class="leaf-k">shell</span>
-                    <span class="leaf-v typewriter" data-text="npm test -- auth"></span>
+                    <span class="leaf-v typewriter" data-field="tools.shell" data-text="—"></span>
                   </div>
                   <div class="leaf">
                     <span class="leaf-k">git</span>
-                    <span class="leaf-v typewriter" data-text="diff staged auth changes"></span>
+                    <span class="leaf-v typewriter" data-field="tools.git" data-text="—"></span>
                   </div>
                   <div class="leaf">
                     <span class="leaf-k">search</span>
-                    <span class="leaf-v typewriter" data-text="grep API_KEY | session cookie handlers"></span>
+                    <span class="leaf-v typewriter" data-field="tools.search" data-text="—"></span>
                   </div>
                 </div>
               </div>
             </div>
-            <div class="tree-connector" aria-hidden="true"></div>
+            <div class="tree-connector" aria-hidden="true"><span class="flow-packet" aria-hidden="true"></span></div>
           </div>
 
           <!-- SYMBOLIC -->
@@ -313,20 +329,20 @@
                 <div class="tree-leaves">
                   <div class="leaf">
                     <span class="leaf-k">task</span>
-                    <span class="leaf-v typewriter" data-text="validate cookie max-age + key format"></span>
+                    <span class="leaf-v typewriter" data-field="symbolic.task" data-text="—"></span>
                   </div>
                   <div class="leaf">
                     <span class="leaf-k">engine</span>
-                    <span class="leaf-v typewriter" data-text="regex · dates · json schema — no LLM"></span>
+                    <span class="leaf-v typewriter" data-field="symbolic.engine" data-text="—"></span>
                   </div>
                   <div class="leaf">
                     <span class="leaf-k">result</span>
-                    <span class="leaf-v typewriter" data-text="verified deterministic ✓"></span>
+                    <span class="leaf-v typewriter" data-field="symbolic.result" data-text="—"></span>
                   </div>
                 </div>
               </div>
             </div>
-            <div class="tree-connector" aria-hidden="true"></div>
+            <div class="tree-connector" aria-hidden="true"><span class="flow-packet" aria-hidden="true"></span></div>
           </div>
 
           <!-- AI -->
@@ -345,20 +361,20 @@
                 <div class="tree-leaves">
                   <div class="leaf">
                     <span class="leaf-k">route</span>
-                    <span class="leaf-v typewriter" data-text="hybrid — local draft, remote harden"></span>
+                    <span class="leaf-v typewriter" data-field="ai.route" data-text="—"></span>
                   </div>
                   <div class="leaf">
                     <span class="leaf-k">local</span>
-                    <span class="leaf-v typewriter" data-text="outline patch + edge cases"></span>
+                    <span class="leaf-v typewriter" data-field="ai.local" data-text="—"></span>
                   </div>
                   <div class="leaf">
                     <span class="leaf-k">remote</span>
-                    <span class="leaf-v typewriter" data-text="finalize middleware implementation"></span>
+                    <span class="leaf-v typewriter" data-field="ai.remote" data-text="—"></span>
                   </div>
                 </div>
               </div>
             </div>
-            <div class="tree-connector" aria-hidden="true"></div>
+            <div class="tree-connector" aria-hidden="true"><span class="flow-packet" aria-hidden="true"></span></div>
           </div>
 
           <!-- VERIFICATION -->
@@ -377,24 +393,24 @@
                 <div class="tree-leaves">
                   <div class="leaf">
                     <span class="leaf-k">tools</span>
-                    <span class="leaf-v typewriter" data-text="✓ patch applied · files match plan"></span>
+                    <span class="leaf-v typewriter" data-field="verification.tools" data-text="—"></span>
                   </div>
                   <div class="leaf">
                     <span class="leaf-k">tests</span>
-                    <span class="leaf-v typewriter" data-text="✓ auth suite 24/24"></span>
+                    <span class="leaf-v typewriter" data-field="verification.tests" data-text="—"></span>
                   </div>
                   <div class="leaf">
                     <span class="leaf-k">evidence</span>
-                    <span class="leaf-v typewriter" data-text="✓ diff + test log attached"></span>
+                    <span class="leaf-v typewriter" data-field="verification.evidence" data-text="—"></span>
                   </div>
                   <div class="leaf">
                     <span class="leaf-k">confidence</span>
-                    <span class="leaf-v typewriter" data-text="0.94 → trusted"></span>
+                    <span class="leaf-v typewriter" data-field="verification.confidence" data-text="—"></span>
                   </div>
                 </div>
               </div>
             </div>
-            <div class="tree-connector" aria-hidden="true"></div>
+            <div class="tree-connector" aria-hidden="true"><span class="flow-packet" aria-hidden="true"></span></div>
           </div>
 
           <!-- ANSWER -->
@@ -415,7 +431,8 @@
                     <span class="leaf-k">response</span>
                     <span
                       class="leaf-v typewriter"
-                      data-text="Auth middleware now accepts API keys or session cookies. CLI login untouched. All auth tests passing."
+                      data-field="answer.response"
+                      data-text="—"
                     ></span>
                   </div>
                 </div>
