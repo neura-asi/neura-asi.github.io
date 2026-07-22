@@ -2,12 +2,32 @@
   const pipeline = document.getElementById("pipeline");
   if (!pipeline) return;
 
-  const form = document.getElementById("prompt-form");
   const input = document.getElementById("prompt-input");
-  const sendBtn = document.getElementById("prompt-send");
-  const stopBtn = document.getElementById("prompt-stop");
   const barText = document.getElementById("sim-bar-text");
   const simBar = document.getElementById("sim-bar");
+
+  const PROMPTS = [
+    "Refactor auth middleware to support API keys + session cookies without breaking CLI login.",
+    "Find why the CI pipeline fails only on ubuntu-latest and propose a minimal fix.",
+    "Add dark mode to the settings page and keep the existing design tokens.",
+    "Summarize the last three design decisions about the memory graph and cite sources.",
+    "Write a migration to add a users.api_key_hash column and update the ORM models.",
+    "Debug the flaky websocket reconnect test — it fails about 1 in 8 runs.",
+    "Generate a changelog for commits since v0.4.2 focused on user-facing changes.",
+    "Optimize the context vault compression path — large chats are still too slow.",
+    "Create a Dockerfile for the inference sidecar that stays under 200MB.",
+    "Explain how cache hits interact with the planner before tools are invoked.",
+    "Patch the regex date parser so ISO weeks and timezones parse correctly.",
+    "Search the repo for unused feature flags and list safe deletion candidates.",
+    "Draft an ADR for hybrid local/remote model routing with hardware constraints.",
+    "Fix the race where verification reads files before the tool write completes.",
+    "Convert the YAML config schema to JSON Schema and validate on startup.",
+    "Build a small script that replays a cached tool result for offline demos.",
+    "Update the README quickstart for Apple Silicon and CUDA hosts.",
+    "Investigate why embedding search returns stale memories after consolidation.",
+    "Add unit tests for the symbolic engine unit-conversion helpers.",
+    "Plan a safe rollout of the new intent parser behind a 10% traffic flag.",
+  ];
 
   const STAGE_ORDER = [
     "user",
@@ -24,6 +44,8 @@
 
   let simulating = false;
   let simToken = 0;
+  let promptIndex = 0;
+  let loopTimer = null;
   const typeTimers = new WeakMap();
   const pendingTimeouts = [];
 
@@ -44,6 +66,10 @@
 
   function clearPending() {
     while (pendingTimeouts.length) window.clearTimeout(pendingTimeouts.pop());
+    if (loopTimer) {
+      window.clearTimeout(loopTimer);
+      loopTimer = null;
+    }
   }
 
   function clearTypewriter(el) {
@@ -67,7 +93,6 @@
           resolve();
           return;
         }
-        // Type 2–3 chars at a time for smoother motion
         const chunk = text.length > 80 ? 3 : text.length > 40 ? 2 : 1;
         i = Math.min(text.length, i + chunk);
         el.textContent = text.slice(0, i);
@@ -125,7 +150,8 @@
     const stop = {
       a: 1, an: 1, the: 1, to: 1, and: 1, or: 1, for: 1, of: 1, in: 1, on: 1,
       with: 1, keep: 1, dont: 1, be: 1, is: 1, are: 1, it: 1, this: 1,
-      that: 1, my: 1, me: 1, i: 1, please: 1, can: 1, you: 1,
+      that: 1, my: 1, me: 1, i: 1, please: 1, can: 1, you: 1, why: 1, how: 1,
+      only: 1, about: 1, from: 1, into: 1, under: 1, after: 1,
     };
     return text
       .toLowerCase()
@@ -143,11 +169,29 @@
     if (/auth|login|session|cookie|api.?key/.test(p)) {
       files.push("src/auth/middleware.ts", "src/cli/login.ts", "tests/auth.test.ts");
     }
-    if (/test|jest|vitest|pytest/.test(p)) files.push("tests/suite.test.ts");
-    if (/docker|deploy|ci/.test(p)) files.push(".github/workflows/ci.yml", "Dockerfile");
-    if (/readme|doc/.test(p)) files.push("README.md");
-    if (/css|ui|page|frontend|react/.test(p)) files.push("src/ui/App.tsx", "src/styles.css");
-    if (/db|sql|schema|migrate/.test(p)) files.push("db/migrations/001.sql", "src/db/client.ts");
+    if (/ci|pipeline|ubuntu|github/.test(p)) {
+      files.push(".github/workflows/ci.yml", "scripts/ci.sh");
+    }
+    if (/dark.?mode|settings|ui|page|frontend|react|design.?token/.test(p)) {
+      files.push("src/ui/Settings.tsx", "src/styles/tokens.css");
+    }
+    if (/memory|embed|graph|vault|cache|sidecar/.test(p)) {
+      files.push("src/memory/graph.ts", "src/memory/vault.ts", "src/cache/store.ts");
+    }
+    if (/docker|image|mb/.test(p)) files.push("Dockerfile", "docker/sidecar.Dockerfile");
+    if (/migration|orm|column|sql|schema/.test(p)) {
+      files.push("db/migrations/002_api_key.sql", "src/db/models/user.ts");
+    }
+    if (/websocket|reconnect|flaky|test/.test(p)) {
+      files.push("tests/ws.reconnect.test.ts", "src/net/ws.ts");
+    }
+    if (/changelog|readme|adr|docs/.test(p)) files.push("CHANGELOG.md", "README.md", "docs/adr/");
+    if (/regex|date|symbolic|yaml|json.?schema/.test(p)) {
+      files.push("src/symbolic/dates.ts", "src/config/schema.json");
+    }
+    if (/race|verification|tool write/.test(p)) {
+      files.push("src/verify/runner.ts", "src/tools/fs.ts");
+    }
     if (!files.length) {
       const base = keys[0] || "app";
       files.push("src/" + base + ".ts", "tests/" + base + ".test.ts");
@@ -164,7 +208,7 @@
     const confOut = (0.9 + Math.random() * 0.07).toFixed(2);
     const short = prompt.length > 72 ? prompt.slice(0, 69).trim() + "…" : prompt;
     const ctxId = Math.random().toString(16).slice(2, 6);
-    const needsCode = /code|refactor|fix|implement|bug|test|auth|api|ui|build/.test(
+    const needsCode = /code|refactor|fix|implement|bug|test|auth|api|ui|build|docker|migration|patch|debug|optimize|script|dockerfile|schema|race/.test(
       prompt.toLowerCase()
     );
 
@@ -359,16 +403,18 @@
     completeStage(stage);
   }
 
+  function showPrompt(prompt) {
+    if (input) input.value = prompt;
+  }
+
   async function runSimulation(prompt) {
     simToken += 1;
     simulating = true;
     clearPending();
     pipeline.classList.add("is-simulating");
     document.body.classList.add("is-simulating");
-    if (sendBtn) sendBtn.disabled = true;
-    if (input) input.disabled = true;
-    if (stopBtn) stopBtn.hidden = false;
 
+    showPrompt(prompt);
     resetAllFields();
     STAGE_ORDER.forEach(function (name) {
       const el = stageEl(name);
@@ -376,7 +422,7 @@
     });
 
     const map = buildSimulation(prompt);
-    setBar("Starting inference simulation…", "is-run");
+    setBar("Demo " + (promptIndex + 1) + "/" + PROMPTS.length + " · running", "is-run");
 
     for (let i = 0; i < STAGE_ORDER.length; i++) {
       if (!simulating) return;
@@ -386,33 +432,19 @@
     }
 
     if (!simulating) return;
-    setBar("Simulation complete — every stage stayed open. Send another prompt anytime.", "is-done");
-    finishSim(false);
-  }
-
-  function finishSim(stopped) {
+    setBar("Demo " + (promptIndex + 1) + "/" + PROMPTS.length + " · complete — next prompt soon", "is-done");
     simulating = false;
-    clearPending();
     pipeline.classList.remove("is-simulating");
     document.body.classList.remove("is-simulating");
-    if (sendBtn) sendBtn.disabled = false;
-    if (input) input.disabled = false;
-    if (stopBtn) stopBtn.hidden = true;
-    if (stopped) setBar("Simulation stopped.", "is-idle");
-  }
 
-  function stopSimulation() {
-    if (!simulating) return;
-    simToken += 1;
-    simulating = false;
-    clearPending();
-    pipeline.querySelectorAll(".typewriter.typing").forEach(clearTypewriter);
-    finishSim(true);
+    promptIndex = (promptIndex + 1) % PROMPTS.length;
+    loopTimer = window.setTimeout(function () {
+      runSimulation(PROMPTS[promptIndex]);
+    }, 1800);
   }
 
   function openStageManual(stage) {
     if (simulating) return;
-    // After a sim, keep other completed stages open; only toggle focus styling
     pipeline.querySelectorAll(".tree-stage.is-active").forEach(function (other) {
       if (other !== stage) {
         other.classList.remove("is-active");
@@ -425,48 +457,6 @@
     stage.classList.add("is-open", "is-active");
     stage.classList.remove("is-done");
     keepBranchOpen(stage);
-    const branch = stage.querySelector(".tree-branch");
-    if (!branch) return;
-    const els = Array.prototype.filter.call(branch.querySelectorAll(".typewriter"), function (el) {
-      return !el.closest(".mem-leaves");
-    });
-    els.forEach(function (el, index) {
-      const text = el.getAttribute("data-text") || "";
-      if (!text || text === "—" || el.textContent === text) return;
-      window.setTimeout(function () {
-        el.setAttribute("data-sim", String(simToken));
-        typewriter(el, text, 8);
-      }, 80 + index * 50);
-    });
-  }
-
-  if (form) {
-    form.addEventListener("submit", function (event) {
-      event.preventDefault();
-      const prompt = (input && input.value ? input.value : "").trim();
-      if (!prompt) {
-        setBar("Enter a prompt to simulate.", "is-idle");
-        if (input) input.focus();
-        return;
-      }
-      runSimulation(prompt);
-    });
-  }
-
-  if (stopBtn) {
-    stopBtn.addEventListener("click", function (event) {
-      event.preventDefault();
-      stopSimulation();
-    });
-  }
-
-  if (input) {
-    input.addEventListener("keydown", function (event) {
-      if (event.key === "Enter" && !event.shiftKey) {
-        event.preventDefault();
-        if (form) form.requestSubmit();
-      }
-    });
   }
 
   pipeline.addEventListener("click", function (event) {
@@ -476,19 +466,8 @@
       event.preventDefault();
       const mem = memBtn.closest(".mem-branch");
       if (!mem) return;
-      if (mem.classList.contains("is-open") && !mem.classList.contains("is-done")) {
-        closeMem(mem);
-      } else {
-        openMem(mem);
-        mem.querySelectorAll(".typewriter").forEach(function (el, index) {
-          const text = el.getAttribute("data-text") || "";
-          if (!text || text === "—" || el.textContent === text) return;
-          window.setTimeout(function () {
-            el.setAttribute("data-sim", String(simToken));
-            typewriter(el, text, 8);
-          }, 60 + index * 40);
-        });
-      }
+      if (mem.classList.contains("is-open") && !mem.classList.contains("is-done")) closeMem(mem);
+      else openMem(mem);
       return;
     }
 
@@ -497,20 +476,16 @@
       if (simulating) return;
       event.preventDefault();
       const stage = nodeBtn.closest(".tree-stage");
-      if (!stage) return;
-      openStageManual(stage);
+      if (stage) openStageManual(stage);
     }
   });
 
-  // Boot: keep User open, empty awaiting state
+  // Auto-start demo loop
   const boot = stageEl("user");
-  if (boot) {
-    activateStage(boot);
-    const promptEl = field("user.prompt");
-    const sessionEl = field("user.session");
-    if (promptEl) promptEl.textContent = "awaiting prompt…";
-    if (sessionEl) sessionEl.textContent = "awaiting prompt…";
-  }
-
-  setBar("Ready — enter a prompt to run a full inference simulation.", "is-idle");
+  if (boot) activateStage(boot);
+  showPrompt(PROMPTS[0]);
+  setBar("Starting live demo…", "is-run");
+  window.setTimeout(function () {
+    runSimulation(PROMPTS[0]);
+  }, 600);
 })();
